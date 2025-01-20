@@ -1,3 +1,4 @@
+const { string } = require('joi');
 const mongoose = require('mongoose');
 
 const salesOrderSchema = new mongoose.Schema({
@@ -60,6 +61,10 @@ const salesOrderSchema = new mongoose.Schema({
     enum: ['pending', 'processing', 'completed', 'cancelled'],
     default: 'pending'
   },
+  orderId: {
+    type: string,
+    required: true
+  },
   createdAt: {
     type: Date,
     default: Date.now
@@ -70,7 +75,7 @@ const salesOrderSchema = new mongoose.Schema({
   }
 });
 
-salesOrderSchema.pre('save', function(next) {
+salesOrderSchema.pre('save', function (next) {
   this.updatedAt = new Date();
   next();
 });

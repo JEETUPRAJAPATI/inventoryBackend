@@ -21,9 +21,9 @@ class SalesOrderService {
         fabricQuality: orderData.fabricQuality,
         quantity: orderData.quantity,
         agent: orderData.agent,
-        status: orderData.status || 'pending'
+        status: orderData.status || 'pending', // Default to 'pending' if status is not provided
+        orderId: orderData.orderId // Assuming orderId is passed in the orderData
       });
-
       return await order.save();
     } catch (error) {
       logger.error('Error creating sales order:', error);
@@ -38,7 +38,7 @@ class SalesOrderService {
       if (agent) query.agent = agent;
 
       const skip = (page - 1) * limit;
-      
+
       const [orders, total] = await Promise.all([
         SalesOrder.find(query).skip(skip).limit(limit),
         SalesOrder.countDocuments(query)
@@ -78,7 +78,7 @@ class SalesOrderService {
         { $set: updateData },
         { new: true, runValidators: true }
       );
-      
+
       if (!order) {
         throw new Error('Order not found');
       }
@@ -96,7 +96,7 @@ class SalesOrderService {
         { status: 'cancelled' },
         { new: true }
       );
-      
+
       if (!order) {
         throw new Error('Order not found');
       }
