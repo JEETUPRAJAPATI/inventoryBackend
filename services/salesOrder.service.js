@@ -2,8 +2,16 @@ const SalesOrder = require('../models/SalesOrder');
 const logger = require('../utils/logger');
 
 class SalesOrderService {
+  // Helper function to generate unique order ID
+  generateOrderId() {
+    const prefix = 'ORD';
+    const uniqueId = Math.random().toString(36).substr(2, 6).toUpperCase();
+    return `${prefix}-${uniqueId}`;
+  }
   async createOrder(orderData) {
     try {
+      const uniqueOrderId = generateOrderId(); // Replace with your unique ID generation logic
+
       const order = new SalesOrder({
         customerName: orderData.customerName,
         email: orderData.email,
@@ -22,7 +30,7 @@ class SalesOrderService {
         quantity: orderData.quantity,
         agent: orderData.agent,
         status: orderData.status || 'pending', // Default to 'pending' if status is not provided
-        orderId: orderData.orderId // Assuming orderId is passed in the orderData
+        orderId: uniqueOrderId
       });
       return await order.save();
     } catch (error) {
@@ -106,6 +114,8 @@ class SalesOrderService {
       throw error;
     }
   }
+
+
 }
 
 module.exports = new SalesOrderService();

@@ -62,7 +62,8 @@ const salesOrderSchema = new mongoose.Schema({
     default: 'pending'
   },
   orderId: {
-    type: string,
+    type: String,
+    unique: true,
     required: true
   },
   createdAt: {
