@@ -98,21 +98,20 @@ class SalesOrderService {
 
   async deleteOrder(orderId) {
     try {
-      const order = await SalesOrder.findByIdAndUpdate(
-        orderId,
-        { status: 'cancelled' },
-        { new: true }
-      );
+      // Find and delete the order by its ID
+      const order = await SalesOrder.findByIdAndDelete(orderId);
 
       if (!order) {
         throw new Error('Order not found');
       }
+
       return order;
     } catch (error) {
       logger.error(`Error deleting order ${orderId}:`, error);
       throw error;
     }
   }
+
 }
 
 module.exports = new SalesOrderService();
