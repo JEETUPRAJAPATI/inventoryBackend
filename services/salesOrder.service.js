@@ -17,12 +17,12 @@ class SalesOrderService {
         mobileNumber: orderData.mobileNumber,
         address: orderData.address,
         bagDetails: {
-          type: orderData.bagType,
-          handleColor: orderData.handleColor,
-          size: orderData.size,
-          color: orderData.bagColor,
-          printColor: orderData.printColor,
-          gsm: orderData.gsm
+          type: orderData.bagDetails.type, // Correct field names
+          handleColor: orderData.bagDetails.handleColor,
+          size: orderData.bagDetails.size,
+          color: orderData.bagDetails.color,
+          printColor: orderData.bagDetails.printColor,
+          gsm: orderData.bagDetails.gsm
         },
         jobName: orderData.jobName,
         fabricQuality: orderData.fabricQuality,
@@ -31,13 +31,13 @@ class SalesOrderService {
         status: orderData.status || 'pending',
         orderId: uniqueOrderId
       });
-      console.log('order', order);
       return await order.save();
     } catch (error) {
-      logger.error('Error creating sales order:', error);
+      console.error('Error creating sales order:', error);
       throw error;
     }
   }
+
 
   async getOrders({ status, agent, page = 1, limit = 10 }) {
     try {
