@@ -10,8 +10,7 @@ class SalesOrderService {
   }
   async createOrder(orderData) {
     try {
-      const uniqueOrderId = generateOrderId(); // Replace with your unique ID generation logic
-
+      const uniqueOrderId = this.generateOrderId();
       const order = new SalesOrder({
         customerName: orderData.customerName,
         email: orderData.email,
@@ -29,7 +28,7 @@ class SalesOrderService {
         fabricQuality: orderData.fabricQuality,
         quantity: orderData.quantity,
         agent: orderData.agent,
-        status: orderData.status || 'pending', // Default to 'pending' if status is not provided
+        status: orderData.status || 'pending',
         orderId: uniqueOrderId
       });
       return await order.save();
@@ -114,8 +113,6 @@ class SalesOrderService {
       throw error;
     }
   }
-
-
 }
 
 module.exports = new SalesOrderService();
