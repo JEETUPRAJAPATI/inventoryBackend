@@ -6,6 +6,7 @@ const authRoutes = require('./routes/auth.routes');
 const adminRoutes = require('./routes/admin.routes');
 const salesRoutes = require('./routes/sales.routes');
 const deliveryRoutes = require('./routes/delivery.routes');
+const productionManagerRoutes = require('./routes/production/manager.routes');
 const errorHandler = require('./middleware/errorHandler');
 const logger = require('./utils/logger');
 const path = require('path');
@@ -20,7 +21,7 @@ connectDB();
 
 // Middleware
 app.use(cors());
-app.use(morgan('combined')); // Fix morgan warning by specifying format
+app.use(morgan('combined'));
 app.use(express.json());
 app.use(express.static('static'));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
@@ -50,6 +51,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/sales', salesRoutes);
 app.use('/api/delivery', deliveryRoutes);
+app.use('/api/production/manager', productionManagerRoutes);
 
 // Error handling middleware
 app.use(errorHandler);
