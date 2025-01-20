@@ -31,6 +31,7 @@ class SalesOrderService {
         status: orderData.status || 'pending',
         orderId: uniqueOrderId
       });
+      console.log('order', order);
       return await order.save();
     } catch (error) {
       logger.error('Error creating sales order:', error);

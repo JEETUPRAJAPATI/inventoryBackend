@@ -23,20 +23,31 @@ const salesOrderSchema = new mongoose.Schema({
     trim: true
   },
   bagDetails: {
-    type: {
+    bagType: {
       type: String,
       required: true
     },
-    handleColor: String,
+    handleColor: {
+      type: String,
+      trim: true
+    },
     size: {
       type: String,
-      required: true
+      required: true,
+      trim: true
     },
-    color: String,
-    printColor: String,
+    color: {
+      type: String,
+      trim: true
+    },
+    printColor: {
+      type: String,
+      trim: true
+    },
     gsm: {
       type: Number,
-      required: true
+      required: true,
+      min: 10
     }
   },
   jobName: {
