@@ -23,7 +23,7 @@ const salesOrderSchema = new mongoose.Schema({
     trim: true
   },
   bagDetails: {
-    type: {
+    bagType: {
       type: String,
       required: true
     },
