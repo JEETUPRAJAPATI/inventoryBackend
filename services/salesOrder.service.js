@@ -3,11 +3,14 @@ const logger = require('../utils/logger');
 
 class SalesOrderService {
   // Helper function to generate unique order ID
-  generateOrderId() {
+  generateOrderId(userId) {
     const prefix = 'ORD';
-    const uniqueId = Math.random().toString(36).substr(2, 6).toUpperCase();
-    return `${prefix}-${uniqueId}`;
+    const timestamp = Date.now().toString(36); // Timestamp as base36 for shorter length
+    const randomId = Math.random().toString(36).substr(2, 4).toUpperCase(); // Short random string
+
+    return `${prefix}-${timestamp}-${randomId}`;
   }
+
   async createOrder(orderData) {
     try {
       const uniqueOrderId = this.generateOrderId();
