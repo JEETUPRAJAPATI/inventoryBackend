@@ -63,6 +63,7 @@ const salesOrderSchema = new mongoose.Schema({
   },
   orderId: {
     type: String,
+    unique: true,
     required: true
   },
   createdAt: {
