@@ -23,9 +23,9 @@ const salesOrderSchema = new mongoose.Schema({
     trim: true
   },
   bagDetails: {
-    bagType: {
+    type: {
       type: String,
-      required: true
+      required: false
     },
     handleColor: {
       type: String,
