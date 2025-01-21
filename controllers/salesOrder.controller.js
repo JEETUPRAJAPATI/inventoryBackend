@@ -22,7 +22,7 @@ class SalesOrderController {
     try {
       const { status, agent, page, limit } = req.query;
       const orders = await SalesOrderService.getOrders({ status, agent, page, limit });
-      
+
       res.json({
         success: true,
         data: orders.data,

@@ -1,6 +1,6 @@
 const User = require('../models/User');
 const logger = require('../utils/logger');
-const { REGISTRATION_TYPES } = require('../config/constants');
+const { REGISTRATION_TYPES, OPERATOR_TYPES, BAG_TYPES } = require('../config/constants');
 class UserService {
   async getUsers({ role, status, page = 1, limit = 10 }) {
     try {
@@ -57,25 +57,13 @@ class UserService {
       throw error;
     }
   }
-
   async updateUser(userId, userData) {
     console.log('userId', userId);
     console.log('userData', userData);
-
-    if (userData.registrationType === REGISTRATION_TYPES.PRODUCTION) {
-      if (!Object.values(BAG_TYPES).includes(userData.bagType)) {
-        throw new Error('Invalid bagType for production user');
-      }
-      if (!Object.values(OPERATOR_TYPES).includes(userData.operatorType)) {
-        throw new Error('Invalid operatorType for production user');
-      }
-    }
-
     try {
       const user = await User.findByIdAndUpdate(
         userId,
-        { $set: userData },
-        { new: true, runValidators: true }
+        { $set: userData }
       ).select('-password');
 
       if (!user) {
@@ -88,6 +76,7 @@ class UserService {
       throw error;
     }
   }
+
 
 
   async deleteUser(userId) {
