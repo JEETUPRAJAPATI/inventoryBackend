@@ -4,6 +4,7 @@ const REGISTRATION_TYPES = {
   DELIVERY: 'delivery',
   PRODUCTION: 'production',
   PRODUCTION_MANAGER: 'production_manager',
+  INVENTORY: 'inventory',
 };
 
 const BAG_TYPES = {
