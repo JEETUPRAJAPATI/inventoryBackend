@@ -1,6 +1,6 @@
 const User = require('../models/User');
 const logger = require('../utils/logger');
-
+const { REGISTRATION_TYPES } = require('../config/constants');
 class UserService {
   async getUsers({ role, status, page = 1, limit = 10 }) {
     try {
@@ -9,7 +9,7 @@ class UserService {
       if (status) query.status = status;
 
       const skip = (page - 1) * limit;
-      
+
       const [users, total] = await Promise.all([
         User.find(query)
           .select('-password')
@@ -35,11 +35,11 @@ class UserService {
   async getUserById(userId) {
     try {
       const user = await User.findById(userId).select('-password');
-      
+
       if (!user) {
         throw new Error('User not found');
       }
-      
+
       return user;
     } catch (error) {
       logger.error(`Error fetching user with ID ${userId}:`, error);
@@ -59,6 +59,18 @@ class UserService {
   }
 
   async updateUser(userId, userData) {
+    console.log('userId', userId);
+    console.log('userData', userData);
+
+    if (userData.registrationType === REGISTRATION_TYPES.PRODUCTION) {
+      if (!Object.values(BAG_TYPES).includes(userData.bagType)) {
+        throw new Error('Invalid bagType for production user');
+      }
+      if (!Object.values(OPERATOR_TYPES).includes(userData.operatorType)) {
+        throw new Error('Invalid operatorType for production user');
+      }
+    }
+
     try {
       const user = await User.findByIdAndUpdate(
         userId,
@@ -76,6 +88,7 @@ class UserService {
       throw error;
     }
   }
+
 
   async deleteUser(userId) {
     try {

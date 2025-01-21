@@ -38,27 +38,35 @@ const userSchema = new mongoose.Schema({
   bagType: {
     type: String,
     enum: [...Object.values(BAG_TYPES), ''],
-    required: function () {
-      return this.registrationType === REGISTRATION_TYPES.PRODUCTION;
-    },
+    default: '',
     validate: {
       validator: function (value) {
-        return this.registrationType === REGISTRATION_TYPES.PRODUCTION || value === '';
+        if (this.registrationType === REGISTRATION_TYPES.PRODUCTION) {
+          return Object.values(BAG_TYPES).includes(value);
+        }
+        return value === '';
       },
-      message: 'bagType must be blank for non-production types.'
+      message: props =>
+        props.value === '' ?
+          'bagType is required for production users' :
+          'bagType must be blank for non-production users'
     }
   },
   operatorType: {
     type: String,
     enum: [...Object.values(OPERATOR_TYPES), ''],
-    required: function () {
-      return this.registrationType === REGISTRATION_TYPES.PRODUCTION;
-    },
+    default: '',
     validate: {
       validator: function (value) {
-        return this.registrationType === REGISTRATION_TYPES.PRODUCTION || value === '';
+        if (this.registrationType === REGISTRATION_TYPES.PRODUCTION) {
+          return Object.values(OPERATOR_TYPES).includes(value);
+        }
+        return value === '';
       },
-      message: 'operatorType must be blank for non-production types.'
+      message: props =>
+        props.value === '' ?
+          'operatorType is required for production users' :
+          'operatorType must be blank for non-production users'
     }
   },
   status: {
