@@ -1,4 +1,4 @@
-const Sale = require('../models/Sale');
+const Sale = require('../models/SalesOrder');
 const logger = require('../utils/logger');
 
 class SaleService {
@@ -9,7 +9,7 @@ class SaleService {
       if (status) query.status = status;
 
       const skip = (page - 1) * limit;
-      
+
       const [sales, total] = await Promise.all([
         Sale.find(query).skip(skip).limit(limit),
         Sale.countDocuments(query)

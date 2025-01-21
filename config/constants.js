@@ -2,7 +2,8 @@ const REGISTRATION_TYPES = {
   ADMIN: 'admin',
   SALES: 'sales',
   DELIVERY: 'delivery',
-  PRODUCTION: 'production'
+  PRODUCTION: 'production',
+  PRODUCTION_MANAGER: 'production_manager',
 };
 
 const BAG_TYPES = {

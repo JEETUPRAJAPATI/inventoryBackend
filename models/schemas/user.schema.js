@@ -38,15 +38,27 @@ const userSchema = new mongoose.Schema({
   bagType: {
     type: String,
     enum: [...Object.values(BAG_TYPES), ''],
-    required: function() {
+    required: function () {
       return this.registrationType === REGISTRATION_TYPES.PRODUCTION;
+    },
+    validate: {
+      validator: function (value) {
+        return this.registrationType === REGISTRATION_TYPES.PRODUCTION || value === '';
+      },
+      message: 'bagType must be blank for non-production types.'
     }
   },
   operatorType: {
     type: String,
     enum: [...Object.values(OPERATOR_TYPES), ''],
-    required: function() {
+    required: function () {
       return this.registrationType === REGISTRATION_TYPES.PRODUCTION;
+    },
+    validate: {
+      validator: function (value) {
+        return this.registrationType === REGISTRATION_TYPES.PRODUCTION || value === '';
+      },
+      message: 'operatorType must be blank for non-production types.'
     }
   },
   status: {
@@ -68,7 +80,7 @@ const userSchema = new mongoose.Schema({
 });
 
 // Middleware to update the updatedAt field
-userSchema.pre('save', function(next) {
+userSchema.pre('save', function (next) {
   this.updatedAt = new Date();
   next();
 });

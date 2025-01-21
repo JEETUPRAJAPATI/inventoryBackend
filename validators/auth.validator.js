@@ -1,6 +1,5 @@
 const Joi = require('joi');
 const { REGISTRATION_TYPES, OPERATOR_TYPES, BAG_TYPES, BAG_TYPE_OPERATORS } = require('../config/constants');
-
 const registrationSchema = Joi.object({
   fullName: Joi.string().required().min(2).max(100),
   email: Joi.string().email().required(),
@@ -16,7 +15,7 @@ const registrationSchema = Joi.object({
     .when('registrationType', {
       is: REGISTRATION_TYPES.PRODUCTION,
       then: Joi.required(),
-      otherwise: Joi.allow('')
+      otherwise: Joi.valid('') // bagType must be blank for production_manager or others
     }),
   operatorType: Joi.string()
     .valid(...Object.values(OPERATOR_TYPES), '')
@@ -28,13 +27,14 @@ const registrationSchema = Joi.object({
 
         const validOperators = BAG_TYPE_OPERATORS[bagType];
         if (!validOperators.includes(value)) {
-          return helpers.error('any.invalid');
+          return helpers.error('any.invalid', { value });
         }
         return value;
       }),
-      otherwise: Joi.allow('')
+      otherwise: Joi.valid('') // operatorType must be blank for production_manager or others
     })
 }).with('password', 'confirmPassword');
+
 
 const loginSchema = Joi.object({
   email: Joi.string().email().required(),
