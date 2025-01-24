@@ -5,7 +5,7 @@ const logger = require('../../../utils/logger');
 class DCutProductionController {
   async getOpsertPrinting(req, res) {
     try {
-      const { status, date, page, limit } = req.query;
+      const { status, date, page = 1, limit = 10 } = req.query;
       const productions = await ProductionService.getProduction({
         bagType: BAG_TYPES.D_CUT,
         operatorType: OPERATOR_TYPES.OPSERT_PRINTING,
@@ -28,12 +28,12 @@ class DCutProductionController {
 
   async getBagMaking(req, res) {
     try {
-      const { operator_name, quantity, page, limit } = req.query;
+      const { status, operator_name, page = 1, limit = 10 } = req.query;
       const productions = await ProductionService.getProduction({
         bagType: BAG_TYPES.D_CUT,
         operatorType: OPERATOR_TYPES.BAG_MAKING,
+        status,
         operator_name,
-        quantity,
         page,
         limit
       });

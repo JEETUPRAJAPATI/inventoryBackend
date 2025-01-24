@@ -3,24 +3,24 @@ const { BAG_TYPES, OPERATOR_TYPES } = require('../config/constants');
 const logger = require('../utils/logger');
 
 class ProductionService {
-  async getProduction({ bagType, operatorType, status, date, operator_name, quantity, page = 1, limit = 10 }) {
+  async getProduction({ bagType, operatorType, status, date, page = 1, limit = 10 }) {
     try {
-      const query = {
-        bagType,
-        operatorType
-      };
-
-      if (status) query.status = status;
-      if (date) query.productionDate = new Date(date);
-      if (operator_name) query.operatorName = new RegExp(operator_name, 'i');
-      if (quantity) query.quantity = quantity;
-
+      // Log request parameters for debugging
+      console.log('Query Parameters:', { bagType, status, date });
+      const query = {};
+      if (bagType) query.bagType = bagType;
+      if (operatorType) query.operatorType = operatorType;
+      if (status && status !== 'all') query.status = status;
+      if (date) {
+        const formattedDate = new Date(date);
+        console.log('Formatted Date:', formattedDate);
+        query.productionDate = formattedDate;
+      }
       const skip = (page - 1) * limit;
-      
-      const [productions, total] = await Promise.all([
-        Production.find(query).skip(skip).limit(limit),
-        Production.countDocuments(query)
-      ]);
+      console.log('Pagination Skip:', skip, 'Limit:', limit);
+
+      const productions = await Production.find(query).skip(skip).limit(limit);
+      const total = await Production.countDocuments(query);
 
       return {
         data: productions,
@@ -35,6 +35,7 @@ class ProductionService {
       throw error;
     }
   }
+
 }
 
 module.exports = new ProductionService();
