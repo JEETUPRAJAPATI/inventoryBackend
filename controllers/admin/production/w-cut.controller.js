@@ -6,9 +6,7 @@ class WCutProductionController {
   async getFlexoPrinting(req, res) {
     try {
       const { status, date, page = 1, limit = 10 } = req.query;
-      const productions = await ProductionService.getProduction({
-        bagType: BAG_TYPES.W_CUT,
-        operatorType: OPERATOR_TYPES.FLEXO_PRINTING,
+      const productions = await ProductionService.getFlexoPrinting({
         status,
         date,
         page,
@@ -29,9 +27,7 @@ class WCutProductionController {
   async getBagMaking(req, res) {
     try {
       const { status, operator_name, page = 1, limit = 10 } = req.query;
-      const productions = await ProductionService.getProduction({
-        bagType: BAG_TYPES.W_CUT,
-        operatorType: OPERATOR_TYPES.BAG_MAKING,
+      const productions = await ProductionService.getBagMaking({
         status,
         operator_name,
         page,

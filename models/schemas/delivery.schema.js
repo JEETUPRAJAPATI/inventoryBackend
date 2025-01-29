@@ -8,58 +8,61 @@ const deliverySchema = new mongoose.Schema({
   },
   customerName: {
     type: String,
-    required: true,
+    required: false,
     trim: true
   },
   email: {
     type: String,
-    required: true,
+    required: false,
     trim: true,
     lowercase: true
   },
   mobileNumber: {
     type: String,
-    required: true
+    required: false
   },
   address: {
     type: String,
-    required: true,
+    required: false,
     trim: true
   },
   bagDetails: {
     type: {
       type: String,
-      required: true
+      required: false
     },
     handleColor: String,
     size: {
       type: String,
-      required: true
+      required: false
     },
     color: String,
     printColor: String,
     gsm: {
       type: Number,
-      required: true
+      required: false
     }
   },
   jobName: {
     type: String,
-    required: true
+    required: false
   },
   fabricQuality: {
     type: String,
-    required: true
+    required: false
   },
   quantity: {
     type: Number,
-    required: true,
+    required: false,
     min: 1
   },
-  vehicleNumber: {
-    type: String,
+  deliveryDate: {
+    type: Date,
     required: true
   },
+  vehicleNo: String,
+  driverName: String,
+  driverContact: String,
   notes: {
     type: String,
     trim: true
@@ -83,7 +86,7 @@ const deliverySchema = new mongoose.Schema({
   }
 });
 
-deliverySchema.pre('save', function(next) {
+deliverySchema.pre('save', function (next) {
   this.updatedAt = new Date();
   next();
 });

@@ -9,7 +9,7 @@ class DeliveryService {
       if (date) query.deliveryDate = new Date(date);
 
       const skip = (page - 1) * limit;
-      
+
       const [deliveries, total] = await Promise.all([
         Delivery.find(query).skip(skip).limit(limit),
         Delivery.countDocuments(query)
@@ -28,6 +28,30 @@ class DeliveryService {
       throw error;
     }
   }
+
+  async update(id, updateData) {
+    console.log('updateData', updateData);
+
+    try {
+      // Find and update the delivery document
+      const delivery = await Delivery.findOneAndUpdate(
+        { _id: id }, // Find the document by ID
+        {
+          $set: updateData, // Set the updated fields
+        },
+        {
+          new: true, // Return the updated document
+          upsert: true, // Create the document if it doesn't exist
+        }
+      );
+
+      return delivery; // Return the updated delivery document
+    } catch (error) {
+      logger.error(`Error updating delivery ${id}:`, error);
+      throw error; // Re-throw error if needed
+    }
+  }
+
 }
 
 module.exports = new DeliveryService();

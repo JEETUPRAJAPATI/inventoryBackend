@@ -26,7 +26,7 @@ class DeliveryCommandService {
   async update(id, updateData) {
     try {
       return await Delivery.findOneAndUpdate(
-        { _id: id, isDeleted: false },
+        { _id: id },
         { $set: updateData },
         { new: true }
       );
@@ -39,7 +39,7 @@ class DeliveryCommandService {
   async softDelete(id) {
     try {
       return await Delivery.findOneAndUpdate(
-        { _id: id, isDeleted: false },
+        { _id: id },
         { $set: { isDeleted: true } },
         { new: true }
       );

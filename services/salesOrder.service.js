@@ -112,6 +112,24 @@ class SalesOrderService {
       throw error;
     }
   }
+  async findOrdersByMobileNumber(mobileNumber) {
+    try {
+      const orders = await SalesOrder.find({ mobileNumber: mobileNumber }).select('customerName email address mobileNumber');
+      return orders;
+    } catch (error) {
+      logger.error(`Error fetching orders by mobile number: ${mobileNumber}`, error);
+      throw new Error('Error fetching orders');
+    }
+  }
+  async findAllMobileNumbers() {
+    try {
+      const mobileNumbers = await SalesOrder.distinct('mobileNumber');
+      return mobileNumbers;
+    } catch (error) {
+      logger.error('Error fetching mobile numbers:', error);
+      throw new Error('Error fetching mobile numbers');
+    }
+  }
 
 }
 

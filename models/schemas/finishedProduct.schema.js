@@ -29,9 +29,7 @@ const finishedProductSchema = new mongoose.Schema({
     min: 0
   },
   status: {
-    type: String,
-    enum: ['Available', 'Out of Stock', 'Discontinued'],
-    default: 'Available'
+    type: String
   },
   createdAt: {
     type: Date,
@@ -40,10 +38,14 @@ const finishedProductSchema = new mongoose.Schema({
   updatedAt: {
     type: Date,
     default: Date.now
-  }
+  },
+  deleted: {
+    type: Boolean,
+    default: false,
+  },
 });
 
-finishedProductSchema.pre('save', function(next) {
+finishedProductSchema.pre('save', function (next) {
   this.updatedAt = new Date();
   next();
 });

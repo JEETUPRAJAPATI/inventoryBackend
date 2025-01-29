@@ -1,13 +1,14 @@
 const Package = require('../../models/Package');
 const mongoose = require('mongoose');
 const logger = require('../../utils/logger');
+const SalesOrder = require('../../models/SalesOrder');
 
 class PackageController {
   async create(req, res) {
     try {
       const pkg = new Package(req.body);
       await pkg.save();
-      
+
       res.status(201).json({
         success: true,
         data: pkg
@@ -21,10 +22,31 @@ class PackageController {
     }
   }
 
+  async getOrders(req, res) {
+    try {
+      // Fetch all orders with the status 'pending'
+      const orders = await SalesOrder.find(
+        { status: 'pending' }
+      );
+      res.json({
+        success: true,
+        data: orders,
+      });
+    } catch (error) {
+      logger.error('Error in getOrders controller:', error);
+      res.status(500).json({
+        success: false,
+        message: error.message,
+      });
+    }
+  }
+
+
+
   async getByOrderId(req, res) {
     try {
       const packages = await Package.find({ order_id: req.params.orderId });
-      
+
       res.json({
         success: true,
         data: packages
@@ -44,9 +66,9 @@ class PackageController {
       const updateData = req.body;
 
       // Find the package document by order ID
-      const pkg = await Package.findOne({ 
+      const pkg = await Package.findOne({
         order_id: orderId,
-        'package_details._id': packageId 
+        'package_details._id': packageId
       });
 
       if (!pkg) {

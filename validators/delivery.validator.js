@@ -20,9 +20,12 @@ const createDeliverySchema = Joi.object({
 });
 
 const updateDeliverySchema = Joi.object({
-  vehicleNumber: Joi.string(),
-  notes: Joi.string(),
-  status: Joi.string().valid('pending', 'in transit', 'delivered', 'cancelled')
+  vehicleNo: Joi.string(),
+  driverName: Joi.string(),
+  driverContact: Joi.string().pattern(/^[0-9]{10}$/),
+  deliveryDate: Joi.date(),
+  status: Joi.string().valid('pending', 'in transit', 'delivered', 'cancelled').optional(),
+
 }).min(1);
 
 module.exports = {

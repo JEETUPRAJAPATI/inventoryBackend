@@ -6,7 +6,7 @@ const logger = require('../../utils/logger');
 class DeliveryCommandController {
   async create(req, res) {
 
-    console.log('request1',req);
+    console.log('request1', req);
     try {
       const { error, value } = createDeliverySchema.validate(req.body);
       if (error) {
@@ -32,6 +32,7 @@ class DeliveryCommandController {
 
   async update(req, res) {
     try {
+
       const { error, value } = updateDeliverySchema.validate(req.body);
       if (error) {
         return res.status(400).json({
@@ -39,7 +40,7 @@ class DeliveryCommandController {
           message: error.details[0].message
         });
       }
-
+      console.log('values', value);
       const delivery = await DeliveryCommandService.update(req.params.id, value);
 
       if (!delivery) {

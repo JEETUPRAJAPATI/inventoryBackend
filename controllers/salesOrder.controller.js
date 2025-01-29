@@ -68,6 +68,53 @@ class SalesOrderController {
       res.status(404).json({ success: false, message: error.message });
     }
   }
+
+  async getOrdersByMobileNumber(req, res) {
+    try {
+      const { mobileNumber } = req.query; // Expect mobileNumber as query param
+
+      // Ensure mobileNumber is provided
+      if (!mobileNumber) {
+        return res.status(400).json({ success: false, message: 'Mobile number is required' });
+      }
+
+      // Log mobileNumber for debugging
+      console.log("Fetching orders for mobile number:", mobileNumber);
+
+      // Query orders by mobileNumber using the service method
+      const orders = await SalesOrderService.findOrdersByMobileNumber(mobileNumber);
+
+      // If no orders found, return 404
+      if (orders.length === 0) {
+        return res.status(404).json({ success: false, message: 'No orders found for this mobile number' });
+      }
+
+      // Return the orders
+      res.json({ success: true, data: orders });
+    } catch (error) {
+      // Log any errors that occur
+      logger.error('Error fetching orders by mobile number:', error);
+      res.status(500).json({ success: false, message: 'Internal Server Error' });
+    }
+  }
+  // SalesOrderController.js
+  async listAllMobileNumbers(req, res) {
+    try {
+      // Query to get all distinct mobile numbers from orders
+      const mobileNumbers = await SalesOrderService.findAllMobileNumbers(); // Use Mongoose's distinct to get unique mobile numbers
+
+      if (mobileNumbers.length === 0) {
+        return res.status(404).json({ success: false, message: 'No mobile numbers found' });
+      }
+
+      res.json({ success: true, data: mobileNumbers });
+    } catch (error) {
+      logger.error('Error fetching mobile numbers:', error);
+      res.status(500).json({ success: false, message: 'Internal Server Error' });
+    }
+  }
+
+
 }
 
 module.exports = new SalesOrderController();

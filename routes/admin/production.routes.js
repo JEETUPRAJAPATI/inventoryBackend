@@ -11,4 +11,5 @@ router.get('/w-cut/bag-making', WCutProductionController.getBagMaking.bind(WCutP
 router.get('/d-cut/opsert', DCutProductionController.getOpsertPrinting.bind(DCutProductionController));
 router.get('/d-cut/bag-making', DCutProductionController.getBagMaking.bind(DCutProductionController));
 
+
 module.exports = router;

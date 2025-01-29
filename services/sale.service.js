@@ -2,29 +2,63 @@ const Sale = require('../models/SalesOrder');
 const logger = require('../utils/logger');
 
 class SaleService {
-  async getSales({ customer_name, status, page = 1, limit = 10 }) {
+  async getSales({ search, status }) {
     try {
       const query = {};
-      if (customer_name) query.customerName = new RegExp(customer_name, 'i');
-      if (status) query.status = status;
+      if (search) {
+        const regex = new RegExp(search, 'i');
+        query.$or = [
+          { orderId: regex },          // Search by Order ID
+          { customerName: regex },     // Search by Customer Name
+          { email: regex },            // Search by Email
+          { mobileNumber: regex },     // Search by Mobile Number
+          { address: regex },          // Search by Address
+          { jobName: regex },          // Search by Job Name
+          { agent: regex },            // Search by Agent
+        ];
+      }
 
-      const skip = (page - 1) * limit;
-
-      const [sales, total] = await Promise.all([
-        Sale.find(query).skip(skip).limit(limit),
-        Sale.countDocuments(query)
-      ]);
+      if (status && status !== 'all') {
+        query.status = status;
+      }
+      const sales = await Sale.find(query);
 
       return {
         data: sales,
-        pagination: {
-          currentPage: parseInt(page),
-          totalPages: Math.ceil(total / limit),
-          totalRecords: total
-        }
       };
     } catch (error) {
       logger.error('Error fetching sales:', error);
+      throw error;
+    }
+  }
+
+  // Fetch a single order by ID
+  async getOrderById(id) {
+    try {
+      return await Sale.findById(id);
+    } catch (error) {
+      logger.error('Error fetching order by ID:', error);
+      throw error;
+    }
+  }
+
+  // Update a sale order by ID
+  async updateOrder(id, updatedData) {
+    try {
+      return await Sale.findByIdAndUpdate(id, updatedData, { new: true });
+    } catch (error) {
+      logger.error('Error updating order:', error);
+      throw error;
+    }
+  }
+
+  // Delete a sale order by ID
+  async deleteOrder(id) {
+    try {
+      const result = await Sale.findByIdAndDelete(id);
+      return result ? true : false;
+    } catch (error) {
+      logger.error('Error deleting order:', error);
       throw error;
     }
   }

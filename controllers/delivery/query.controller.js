@@ -6,23 +6,23 @@ class DeliveryQueryController {
     try {
       const { id } = req.params;
       const delivery = await DeliveryQueryService.findById(id);
-      
+
       if (!delivery) {
-        return res.status(404).json({ 
-          success: false, 
-          message: 'Delivery not found' 
+        return res.status(404).json({
+          success: false,
+          message: 'Delivery not found'
         });
       }
-      
+
       res.json({
         success: true,
         data: delivery
       });
     } catch (error) {
       logger.error('Error fetching delivery by ID:', error);
-      res.status(500).json({ 
-        success: false, 
-        message: error.message 
+      res.status(500).json({
+        success: false,
+        message: error.message
       });
     }
   }
@@ -31,49 +31,49 @@ class DeliveryQueryController {
     try {
       const { orderId } = req.params;
       const delivery = await DeliveryQueryService.findByOrderId(orderId);
-      
+
       if (!delivery) {
-        return res.status(404).json({ 
-          success: false, 
-          message: 'Delivery not found' 
+        return res.status(404).json({
+          success: false,
+          message: 'Delivery not found'
         });
       }
-      
+
       res.json({
         success: true,
         data: delivery
       });
     } catch (error) {
       logger.error('Error fetching delivery:', error);
-      res.status(500).json({ 
-        success: false, 
-        message: error.message 
+      res.status(500).json({
+        success: false,
+        message: error.message
       });
     }
   }
 
   async list(req, res) {
     try {
-      const { 
-        status, 
-        dateRange, 
-        customerName,
-        sortBy,
-        sortOrder,
-        page, 
-        limit 
-      } = req.query;
-
-      const result = await DeliveryQueryService.list({ 
-        status, 
+      const {
+        status,
         dateRange,
         customerName,
         sortBy,
         sortOrder,
-        page, 
-        limit 
+        page,
+        limit
+      } = req.query;
+
+      const result = await DeliveryQueryService.list({
+        status,
+        dateRange,
+        customerName,
+        sortBy,
+        sortOrder,
+        page,
+        limit
       });
-      
+      console.log('result', result);
       res.json({
         success: true,
         data: result.data,
@@ -81,9 +81,9 @@ class DeliveryQueryController {
       });
     } catch (error) {
       logger.error('Error listing deliveries:', error);
-      res.status(500).json({ 
-        success: false, 
-        message: error.message 
+      res.status(500).json({
+        success: false,
+        message: error.message
       });
     }
   }

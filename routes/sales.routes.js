@@ -12,5 +12,8 @@ router.get('/orders', SalesOrderController.getOrders.bind(SalesOrderController))
 router.get('/orders/:id', SalesOrderController.getOrderById.bind(SalesOrderController));
 router.put('/orders/:id', SalesOrderController.updateOrder.bind(SalesOrderController));
 router.delete('/orders/:id', SalesOrderController.deleteOrder.bind(SalesOrderController));
+router.get('/orders/get/mobile-numbers', SalesOrderController.getOrdersByMobileNumber.bind(SalesOrderController));
+router.get('/orders/list/mobile-numbers', SalesOrderController.listAllMobileNumbers.bind(SalesOrderController));
+
 
 module.exports = router;

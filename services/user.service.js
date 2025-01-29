@@ -2,35 +2,34 @@ const User = require('../models/User');
 const logger = require('../utils/logger');
 const { REGISTRATION_TYPES, OPERATOR_TYPES, BAG_TYPES } = require('../config/constants');
 class UserService {
-  async getUsers({ role, status, page = 1, limit = 10 }) {
+  async getUsers({ search, status }) {
     try {
       const query = {};
-      if (role) query.registrationType = role;
-      if (status) query.status = status;
 
-      const skip = (page - 1) * limit;
+      // If status is not 'all', filter by status
+      if (status && status !== 'all') {
+        query.status = status;
+      }
 
-      const [users, total] = await Promise.all([
-        User.find(query)
-          .select('-password')
-          .skip(skip)
-          .limit(limit),
-        User.countDocuments(query)
-      ]);
+      // Add a search filter if search term is provided
+      if (search) {
+        query.$or = [
+          { name: { $regex: search, $options: 'i' } },  // Case-insensitive search for name
+          { email: { $regex: search, $options: 'i' } },  // Case-insensitive search for email
+        ];
+      }
 
-      return {
-        data: users,
-        pagination: {
-          currentPage: parseInt(page),
-          totalPages: Math.ceil(total / limit),
-          totalRecords: total
-        }
-      };
+      // Fetch users based on the filters
+      const users = await User.find(query)
+        .select('-password');  // Exclude the password field from the result
+
+      return users;  // Return the filtered list of users
     } catch (error) {
       logger.error('Error fetching users:', error);
       throw error;
     }
   }
+
 
   async getUserById(userId) {
     try {

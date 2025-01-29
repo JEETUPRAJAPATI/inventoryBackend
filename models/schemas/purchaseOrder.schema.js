@@ -1,16 +1,7 @@
 const mongoose = require('mongoose');
 
 const purchaseOrderSchema = new mongoose.Schema({
-  order_number: {
-    type: String,
-    required: true,
-    unique: true
-  },
   supplier: {
-    type: String,
-    required: true
-  },
-  material_type: {
     type: String,
     required: true
   },
@@ -19,19 +10,36 @@ const purchaseOrderSchema = new mongoose.Schema({
     required: true,
     min: 0
   },
-  total_amount: {
+  unitPrice: {
     type: Number,
     required: true,
     min: 0
   },
-  delivery_date: {
+  totalAmount: {
+    type: Number,
+    required: true,
+    min: 0
+  },
+  deliveryDate: {
     type: Date,
     required: true
   },
   status: {
     type: String,
-    enum: ['Pending', 'Approved', 'Delivered', 'Cancelled'],
+    enum: ['Pending', 'Approved', 'Ordered', 'Received', 'Cancelled'],
     default: 'Pending'
+  },
+  notes: {
+    type: String,
+    required: true
+  },
+  orderNumber: {
+    type: String,
+    required: true
+  },
+  materialType: {
+    type: String,
+    required: true
   },
   createdAt: {
     type: Date,
@@ -43,7 +51,7 @@ const purchaseOrderSchema = new mongoose.Schema({
   }
 });
 
-purchaseOrderSchema.pre('save', function(next) {
+purchaseOrderSchema.pre('save', function (next) {
   this.updatedAt = new Date();
   next();
 });

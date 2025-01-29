@@ -22,9 +22,16 @@ router.delete('/users/:id', AdminController.deleteUser.bind(AdminController));
 
 // Sales routes
 router.get('/sales', SalesController.getSales.bind(SalesController));
+router.get('/sales/:id', SalesController.getOrderById.bind(SalesController));
+router.put('/sales/:id', SalesController.updateOrder.bind(SalesController));
+router.delete('/sales/:id', SalesController.deleteOrder.bind(SalesController));
 
 // Delivery routes
 router.get('/delivery', DeliveryController.getDeliveries.bind(DeliveryController));
+router.get('/delivery/:id', DeliveryController.getById.bind(DeliveryController));
+router.put('/delivery/:id', DeliveryController.update.bind(DeliveryController));
+router.delete('/delivery/:id', DeliveryController.delete.bind(DeliveryController));
+
 
 // Production routes
 router.use('/production', productionRoutes);
