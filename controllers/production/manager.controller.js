@@ -1,110 +1,115 @@
 const ProductionManager = require('../../models/ProductionManager');
 const logger = require('../../utils/logger');
-
+const SalesOrderService = require('../../services/salesOrder.service');
+const SalesOrder = require('../../models/SalesOrder');
 class ProductionManagerController {
   // W-Cut Bagmaking Methods
   async listWCutBagmaking(req, res) {
     try {
-      const { page = 1, limit = 10, status } = req.query;
-      const query = { production_type: 'wcut_bagmaking' };
-      
-      if (status) {
-        query.status = status;
-      }
-
-      const skip = (page - 1) * limit;
-
-      const [entries, total] = await Promise.all([
-        ProductionManager.find(query)
-          .sort({ createdAt: -1 })
-          .skip(skip)
-          .limit(limit),
-        ProductionManager.countDocuments(query)
-      ]);
-
+      const { status, agent, page, limit } = req.query;
+      const type = "w_cut_box_bag"; // Ensure type matches
+      const orders = await SalesOrderService.getOrdersList({ status, agent, page, limit, type });
       res.json({
         success: true,
-        data: entries,
-        pagination: {
-          currentPage: parseInt(page),
-          totalPages: Math.ceil(total / limit),
-          totalRecords: total
-        }
+        data: orders.data,
+        pagination: orders.pagination
       });
     } catch (error) {
-      logger.error('Error listing W-Cut bagmaking entries:', error);
-      res.status(500).json({
-        success: false,
-        message: error.message
-      });
+      logger.error('Error in get orders controller:', error);
+      res.status(500).json({ success: false, message: error.message });
     }
   }
 
-  async updateWCutBagmaking(req, res) {
+  async updateData(req, res) {
     try {
       const { order_id } = req.params;
       const updateData = {
         production_details: req.body,
-        updatedAt: new Date()
+        updatedAt: new Date(),
       };
 
+      // Check if the entry exists
       const entry = await ProductionManager.findOneAndUpdate(
-        { order_id, production_type: 'wcut_bagmaking' },
+        { order_id },
         { $set: updateData },
         { new: true, runValidators: true }
       );
 
-      if (!entry) {
-        return res.status(404).json({
-          success: false,
-          message: 'W-Cut bagmaking entry not found'
+      // If the entry exists, return the updated data
+      if (entry) {
+        return res.json({
+          success: true,
+          data: entry,
         });
       }
 
-      res.json({
+      // If entry does not exist, create a new record
+      const newEntry = new ProductionManager({
+        order_id,
+        production_details: req.body,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+
+      await newEntry.save();
+
+      res.status(201).json({
         success: true,
-        data: entry
+        data: newEntry,
       });
     } catch (error) {
-      logger.error('Error updating W-Cut bagmaking entry:', error);
+      logger.error('Error updating or creating W-Cut bagmaking entry:', error);
       res.status(400).json({
         success: false,
-        message: error.message
+        message: error.message,
       });
     }
   }
 
-  // D-Cut Bagmaking Methods
+
+
   async listDCutBagmaking(req, res) {
     try {
-      const { page = 1, limit = 10, status } = req.query;
-      const query = { production_type: 'dcut_bagmaking' };
-      
-      if (status) {
-        query.status = status;
+      const { status, agent, page, limit } = req.query;
+      const type = "d_cut_loop_handle"; // Ensure type matches
+      const orders = await SalesOrderService.getOrdersList({ status, agent, page, limit, type });
+      res.json({
+        success: true,
+        data: orders.data,
+        pagination: orders.pagination
+      });
+    } catch (error) {
+      logger.error('Error in get orders controller:', error);
+      res.status(500).json({ success: false, message: error.message });
+    }
+  }
+
+
+  async viewOrderDetails(req, res) {
+    try {
+      const { order_id } = req.params;
+      console.log(order_id);
+      // Fetch the order details
+      const order = await SalesOrderService.getOrderById(order_id);
+
+      if (!order) {
+        return res.status(404).json({
+          success: false,
+          message: 'Order not found'
+        });
       }
-
-      const skip = (page - 1) * limit;
-
-      const [entries, total] = await Promise.all([
-        ProductionManager.find(query)
-          .sort({ createdAt: -1 })
-          .skip(skip)
-          .limit(limit),
-        ProductionManager.countDocuments(query)
-      ]);
+      const productionManager = await ProductionManager.findOne({ order_id });
+      const result = {
+        order: order,
+        production_manager: productionManager
+      };
 
       res.json({
         success: true,
-        data: entries,
-        pagination: {
-          currentPage: parseInt(page),
-          totalPages: Math.ceil(total / limit),
-          totalRecords: total
-        }
+        data: result
       });
     } catch (error) {
-      logger.error('Error listing D-Cut bagmaking entries:', error);
+      console.error('Error fetching order and production manager details:', error);
       res.status(500).json({
         success: false,
         message: error.message
@@ -112,39 +117,25 @@ class ProductionManagerController {
     }
   }
 
-  async updateDCutBagmaking(req, res) {
+  async getData(req, res) {
     try {
       const { order_id } = req.params;
-      const updateData = {
-        production_details: req.body,
-        updatedAt: new Date()
-      };
-
-      const entry = await ProductionManager.findOneAndUpdate(
-        { order_id, production_type: 'dcut_bagmaking' },
-        { $set: updateData },
-        { new: true, runValidators: true }
-      );
-
-      if (!entry) {
-        return res.status(404).json({
-          success: false,
-          message: 'D-Cut bagmaking entry not found'
-        });
-      }
-
+      const productionManager = await ProductionManager.findOne({ order_id });
       res.json({
         success: true,
-        data: entry
+        data: {
+          production_manager: productionManager
+        }
       });
     } catch (error) {
-      logger.error('Error updating D-Cut bagmaking entry:', error);
-      res.status(400).json({
+      console.error('Error fetching data:', error);
+      res.status(500).json({
         success: false,
         message: error.message
       });
     }
   }
+
 }
 
 module.exports = new ProductionManagerController();

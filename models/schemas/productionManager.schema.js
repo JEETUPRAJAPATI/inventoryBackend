@@ -9,12 +9,12 @@ const productionDetailsSchema = new mongoose.Schema({
     type: String,
     required: true
   },
-  quantity_in_kg: {
+  quantity_kgs: {  // Update field name to match the request body
     type: Number,
     required: true,
     min: 0
   },
-  quantity_in_roll: {
+  quantity_rolls: {  // Update field name to match the request body
     type: Number,
     required: true,
     min: 0
@@ -34,7 +34,7 @@ const productionManagerSchema = new mongoose.Schema({
   production_type: {
     type: String,
     enum: ['wcut_bagmaking', 'dcut_bagmaking'],
-    required: true
+    required: false
   },
   status: {
     type: String,
@@ -52,7 +52,7 @@ const productionManagerSchema = new mongoose.Schema({
   }
 });
 
-productionManagerSchema.pre('save', function(next) {
+productionManagerSchema.pre('save', function (next) {
   this.updatedAt = new Date();
   next();
 });

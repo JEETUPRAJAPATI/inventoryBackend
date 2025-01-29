@@ -66,9 +66,38 @@ class SalesOrderService {
     }
   }
 
+  async getOrdersList({ status, agent, page = 1, limit = 10, type }) {
+    try {
+      const query = {};
+      if (status) query.status = status;
+      if (agent) query.agent = agent;
+      if (type) query["bagDetails.type"] = type; // Ensure the type matches
+
+      const skip = (page - 1) * limit;
+
+      const [orders, total] = await Promise.all([
+        SalesOrder.find(query).skip(skip).limit(limit),
+        SalesOrder.countDocuments(query)
+      ]);
+
+      return {
+        data: orders,
+        pagination: {
+          currentPage: parseInt(page),
+          totalPages: Math.ceil(total / limit),
+          totalRecords: total
+        }
+      };
+    } catch (error) {
+      logger.error('Error fetching sales orders:', error);
+      throw error;
+    }
+  }
+
   async getOrderById(orderId) {
     try {
-      const order = await SalesOrder.findById(orderId);
+      const order = await SalesOrder.findOne({ orderId: orderId });
+      console.log('list our --------', order);
       if (!order) {
         throw new Error('Order not found');
       }
