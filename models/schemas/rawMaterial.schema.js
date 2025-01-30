@@ -1,39 +1,49 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
 const rawMaterialSchema = new mongoose.Schema({
+  category_name: {
+    type: String,
+    required: true,
+  },
   fabric_quality: {
     type: String,
     required: true,
-    trim: true
+    trim: true,
   },
   roll_size: {
     type: String,
-    required: true
+    required: true,
   },
   gsm: {
     type: Number,
-    required: true
+    required: true,
   },
   fabric_color: {
     type: String,
-    required: true
+    required: true,
   },
   quantity_kgs: {
     type: Number,
     required: true,
-    min: 0
+    min: 0,
   },
+  subCategories: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "SubCategory",
+    },
+  ],
   createdAt: {
     type: Date,
-    default: Date.now
+    default: Date.now,
   },
   updatedAt: {
     type: Date,
-    default: Date.now
-  }
+    default: Date.now,
+  },
 });
 
-rawMaterialSchema.pre('save', function(next) {
+rawMaterialSchema.pre("save", function (next) {
   this.updatedAt = new Date();
   next();
 });
