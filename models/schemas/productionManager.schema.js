@@ -36,11 +36,6 @@ const productionManagerSchema = new mongoose.Schema({
     enum: ['wcut_bagmaking', 'dcut_bagmaking'],
     required: false
   },
-  status: {
-    type: String,
-    enum: ['pending', 'in_progress', 'completed'],
-    default: 'pending'
-  },
   production_details: productionDetailsSchema,
   createdAt: {
     type: Date,
@@ -49,6 +44,10 @@ const productionManagerSchema = new mongoose.Schema({
   updatedAt: {
     type: Date,
     default: Date.now
+  },
+  remark: {
+    type: String,
+    trim: true
   }
 });
 

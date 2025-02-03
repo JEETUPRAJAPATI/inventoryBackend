@@ -8,6 +8,7 @@ router.use(authMiddleware);
 
 // Sales Order Routes
 router.post('/orders', SalesOrderController.createOrder.bind(SalesOrderController));
+router.get('/recentOrders', SalesOrderController.recentOrders.bind(SalesOrderController));
 router.get('/orders', SalesOrderController.getOrders.bind(SalesOrderController));
 router.get('/orders/:id', SalesOrderController.getOrderById.bind(SalesOrderController));
 router.put('/orders/:id', SalesOrderController.updateOrder.bind(SalesOrderController));

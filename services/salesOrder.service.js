@@ -38,33 +38,32 @@ class SalesOrderService {
     }
   }
 
-
-  async getOrders({ status, agent, page = 1, limit = 10 }) {
+  async getOrders({ status, agent }) {
     try {
       const query = {};
       if (status) query.status = status;
       if (agent) query.agent = agent;
 
-      const skip = (page - 1) * limit;
+      const orders = await SalesOrder.find(query);  // Removed pagination logic
 
-      const [orders, total] = await Promise.all([
-        SalesOrder.find(query).skip(skip).limit(limit),
-        SalesOrder.countDocuments(query)
-      ]);
-
-      return {
-        data: orders,
-        pagination: {
-          currentPage: parseInt(page),
-          totalPages: Math.ceil(total / limit),
-          totalRecords: total
-        }
-      };
+      return orders;
     } catch (error) {
       logger.error('Error fetching sales orders:', error);
       throw error;
     }
   }
+  async recentOrders() {
+    try {
+      // Fetch the 5 most recent orders, ordered by creation date
+      const orders = await SalesOrder.find().sort({ createdAt: -1 }).limit(5);  // sorted by `createdAt` in descending order
+
+      return orders;
+    } catch (error) {
+      logger.error('Error fetching recent orders:', error);
+      throw error;
+    }
+  }
+
 
   async getOrdersList({ status, agent, page = 1, limit = 10, type }) {
     try {

@@ -91,6 +91,10 @@ router.put(
   "/package/:orderId/:packageId",
   PackageController.update.bind(PackageController)
 );
+router.post(
+  "/package/order/addOrder/:orderId",
+  PackageController.createPackage.bind(PackageController)
+);
 
 router.get("/delivery", DeliveryController.list.bind(DeliveryController));
 router.put("/delivery/:id", DeliveryController.update.bind(DeliveryController));

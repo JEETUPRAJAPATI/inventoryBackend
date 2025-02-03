@@ -21,6 +21,8 @@ class ProductionManagerController {
   }
 
   async updateData(req, res) {
+
+    console.log('request data--------', req.body);
     try {
       const { order_id } = req.params;
       const updateData = {

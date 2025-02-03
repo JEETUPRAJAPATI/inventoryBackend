@@ -14,8 +14,13 @@ class UserService {
       // Add a search filter if search term is provided
       if (search) {
         query.$or = [
-          { name: { $regex: search, $options: 'i' } },  // Case-insensitive search for name
-          { email: { $regex: search, $options: 'i' } },  // Case-insensitive search for email
+          { fullName: { $regex: search, $options: 'i' } },  // Case-insensitive search for name
+          { mobileNumber: { $regex: search, $options: 'i' } },
+          { email: { $regex: search, $options: 'i' } },
+          { registrationType: { $regex: search, $options: 'i' } },
+          { bagType: { $regex: search, $options: 'i' } },
+          { operatorType: { $regex: search, $options: 'i' } },
+          { status: { $regex: search, $options: 'i' } },
         ];
       }
 

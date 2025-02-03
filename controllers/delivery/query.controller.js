@@ -64,8 +64,14 @@ class DeliveryQueryController {
         limit
       } = req.query;
 
+      // Handle the case where status is 'all'
+      let query = {};
+      if (status && status !== 'all') {
+        query.status = status; // Only add status to query if it is not 'all'
+      }
+
       const result = await DeliveryQueryService.list({
-        status,
+        query, // Pass query to the service
         dateRange,
         customerName,
         sortBy,
@@ -73,6 +79,7 @@ class DeliveryQueryController {
         page,
         limit
       });
+
       console.log('result', result);
       res.json({
         success: true,
@@ -87,6 +94,7 @@ class DeliveryQueryController {
       });
     }
   }
+
 }
 
 module.exports = new DeliveryQueryController();

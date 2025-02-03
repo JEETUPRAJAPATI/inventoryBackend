@@ -21,6 +21,64 @@ class PackageController {
       });
     }
   }
+  async createPackage(req, res) {
+    try {
+      const { order_id, package_details } = req.body;
+
+      // Validate required fields
+      if (!order_id || !Array.isArray(package_details) || package_details.length === 0) {
+        return res.status(400).json({
+          success: false,
+          message: "order_id and package_details (non-empty array) are required."
+        });
+      }
+
+      // Validate each package detail
+      for (const pkg of package_details) {
+        if (
+          typeof pkg.length !== "number" ||
+          typeof pkg.width !== "number" ||
+          typeof pkg.height !== "number" ||
+          typeof pkg.weight !== "number"
+        ) {
+          return res.status(400).json({
+            success: false,
+            message: "Each package detail must have numeric length, width, height, and weight."
+          });
+        }
+      }
+
+      // Find the existing package by order_id
+      let existingPackage = await Package.findOne({ order_id });
+
+      if (existingPackage) {
+        // Append new package_details to the existing package
+        existingPackage.package_details.push(...package_details);
+        existingPackage.updatedAt = new Date();
+        await existingPackage.save();
+
+        return res.status(200).json({
+          success: true,
+          message: "Package details updated successfully.",
+          data: existingPackage
+        });
+      } else {
+        return res.status(404).json({
+          success: false,
+          message: "Order ID not found. Cannot add package details."
+        });
+      }
+    } catch (error) {
+      logger.error(`Error updating package: ${error.message}`, error);
+      res.status(500).json({
+        success: false,
+        message: "Failed to update package details.",
+        error: error.message
+      });
+    }
+  }
+
+
 
   async getOrders(req, res) {
     try {
@@ -45,8 +103,9 @@ class PackageController {
 
   async getByOrderId(req, res) {
     try {
+      console.log('listing data', req.params.orderId);
       const packages = await Package.find({ order_id: req.params.orderId });
-
+      console.log('package listing', packages);
       res.json({
         success: true,
         data: packages
