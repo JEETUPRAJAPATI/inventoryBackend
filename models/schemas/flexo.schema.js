@@ -1,33 +1,20 @@
 const mongoose = require('mongoose');
 
 const flexoSchema = new mongoose.Schema({
-  jobName: {
-    type: String,
-    required: true,
-    trim: true
-  },
-  bagType: {
+  order_id: {
     type: String,
     required: true,
     trim: true
   },
   status: {
     type: String,
-    enum: ['pending', 'in_progress', 'completed'],
+    enum: ['pending', 'in_progress', 'completed', 'w_cut_bagmaking', 'billing'],
     default: 'pending'
-  },
-  operatorName: {
-    type: String,
-    required: true
-  },
-  quantity: {
-    type: Number,
-    required: true,
-    min: 0
   },
   remarks: {
     type: String,
-    trim: true
+    trim: true,
+    required: false
   },
   createdAt: {
     type: Date,
@@ -39,7 +26,7 @@ const flexoSchema = new mongoose.Schema({
   }
 });
 
-flexoSchema.pre('save', function(next) {
+flexoSchema.pre('save', function (next) {
   this.updatedAt = new Date();
   next();
 });

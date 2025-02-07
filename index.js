@@ -9,6 +9,8 @@ const salesRoutes = require('./routes/sales.routes');
 const deliveryRoutes = require('./routes/delivery.routes');
 const inventoryRouter = require('./routes/inventory.routes');
 const productionManagerRoutes = require('./routes/production/manager.routes');
+const dcutBagmaking = require('./routes/dcut/bagmaking.routes');
+const wcutBagmaking = require('./routes/wcut/bagmaking.routes');
 const errorHandler = require('./middleware/errorHandler');
 const logger = require('./utils/logger');
 const path = require('path');
@@ -55,6 +57,9 @@ app.use('/api/sales', salesRoutes);
 app.use('/api/delivery', deliveryRoutes);
 app.use('/api/production/manager', productionManagerRoutes);
 app.use('/api/inventory', inventoryRouter);
+app.use('/api/wcut', wcutBagmaking);
+app.use('/api/dcut', dcutBagmaking);
+
 // Error handling middleware
 app.use(errorHandler);
 

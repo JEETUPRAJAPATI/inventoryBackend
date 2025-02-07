@@ -1,33 +1,44 @@
 const mongoose = require('mongoose');
 
 const wcutBagmakingSchema = new mongoose.Schema({
-  jobName: {
+  order_id: {
     type: String,
     required: true,
+    trim: true,
+    unique: true, // Ensures order_id is unique
+  },
+  status: {
+    type: String,
+    enum: ["pending", "in_progress", "completed", "delivered"],
+    default: "pending",
+  },
+  remarks: {
+    type: String,
+    trim: true,
+    required: false,
+  },
+  jobName: {
+    type: String,
+    required: false,
     trim: true
   },
   bagType: {
     type: String,
-    required: true,
+    required: false,
     trim: true
-  },
-  status: {
-    type: String,
-    enum: ['pending', 'in_progress', 'completed'],
-    default: 'pending'
   },
   operatorName: {
     type: String,
-    required: true
+    required: false
   },
   quantity: {
     type: Number,
-    required: true,
+    required: false,
     min: 0
   },
   remarks: {
     type: String,
-    trim: true
+    trim: false
   },
   createdAt: {
     type: Date,
@@ -39,7 +50,7 @@ const wcutBagmakingSchema = new mongoose.Schema({
   }
 });
 
-wcutBagmakingSchema.pre('save', function(next) {
+wcutBagmakingSchema.pre('save', function (next) {
   this.updatedAt = new Date();
   next();
 });

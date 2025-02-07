@@ -1,45 +1,33 @@
 const mongoose = require('mongoose');
 
 const opsertSchema = new mongoose.Schema({
-  jobName: {
+  order_id: {
     type: String,
     required: true,
-    trim: true
-  },
-  bagType: {
-    type: String,
-    required: true,
-    trim: true
+    trim: true,
+    unique: true, // Ensures order_id is unique
   },
   status: {
     type: String,
-    enum: ['pending', 'in_progress', 'completed'],
-    default: 'pending'
-  },
-  operatorName: {
-    type: String,
-    required: true
-  },
-  quantity: {
-    type: Number,
-    required: true,
-    min: 0
+    enum: ["pending", "in_progress", "completed", "delivery"],
+    default: "pending",
   },
   remarks: {
     type: String,
-    trim: true
+    trim: true,
+    required: false,
   },
   createdAt: {
     type: Date,
-    default: Date.now
+    default: Date.now,
   },
   updatedAt: {
     type: Date,
-    default: Date.now
+    default: Date.now,
   }
 });
 
-opsertSchema.pre('save', function(next) {
+opsertSchema.pre('save', function (next) {
   this.updatedAt = new Date();
   next();
 });

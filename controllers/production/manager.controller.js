@@ -2,6 +2,8 @@ const ProductionManager = require('../../models/ProductionManager');
 const logger = require('../../utils/logger');
 const SalesOrderService = require('../../services/salesOrder.service');
 const SalesOrder = require('../../models/SalesOrder');
+const DcutBagmaking = require('../../models/DcutBagmaking');
+const Flexo = require('../../models/Flexo');
 class ProductionManagerController {
   // W-Cut Bagmaking Methods
   async listWCutBagmaking(req, res) {
@@ -21,52 +23,88 @@ class ProductionManagerController {
   }
 
   async updateData(req, res) {
-
     console.log('request data--------', req.body);
     try {
       const { order_id } = req.params;
+      const { type } = req.body;
+
+      // Check if the entry exists for ProductionManager with the given order_id
+      let entry = await ProductionManager.findOne({ order_id });
+
+      // If the entry exists and status is 'in_progress', do not update
+      if (entry && entry.status === 'in_progress') {
+        return res.status(400).json({
+          success: false,
+          message: 'Cannot update. The entry is in progress.',
+        });
+      }
+
       const updateData = {
         production_details: req.body,
         updatedAt: new Date(),
       };
 
-      // Check if the entry exists
-      const entry = await ProductionManager.findOneAndUpdate(
-        { order_id },
-        { $set: updateData },
-        { new: true, runValidators: true }
-      );
-
-      // If the entry exists, return the updated data
       if (entry) {
-        return res.json({
-          success: true,
-          data: entry,
+        // Update the existing ProductionManager entry
+        entry = await ProductionManager.findOneAndUpdate(
+          { order_id },
+          { $set: updateData },
+          { new: true, runValidators: true }
+        );
+      } else {
+        // Create a new ProductionManager entry
+        entry = new ProductionManager({
+          order_id,
+          production_details: req.body,
+          createdAt: new Date(),
+          updatedAt: new Date(),
         });
+
+        await entry.save();
       }
 
-      // If entry does not exist, create a new record
-      const newEntry = new ProductionManager({
-        order_id,
-        production_details: req.body,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      });
+      // **Move Flexo and DcutBagmaking inserts here to prevent duplicates**
+      if (type === 'WCut') {
+        // Check if a Flexo entry already exists
+        const flexoExists = await Flexo.findOne({ order_id });
+        if (!flexoExists) {
+          const flexoxEntry = new Flexo({
+            order_id,
+            status: 'pending',
+            details: req.body,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          });
+          await flexoxEntry.save();
+        }
+      } else if (type === 'DCut') {
+        // Check if a DcutBagmaking entry already exists
+        const dcutExists = await DcutBagmaking.findOne({ order_id });
+        if (!dcutExists) {
+          const dcutEntry = new DcutBagmaking({
+            order_id,
+            status: 'pending',
+            details: req.body,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          });
+          await dcutEntry.save();
+        }
+      }
 
-      await newEntry.save();
-
-      res.status(201).json({
+      res.status(200).json({
         success: true,
-        data: newEntry,
+        data: entry,
       });
     } catch (error) {
-      logger.error('Error updating or creating W-Cut bagmaking entry:', error);
+      console.error('Error updating or creating entry:', error);
       res.status(400).json({
         success: false,
         message: error.message,
       });
     }
   }
+
 
 
 

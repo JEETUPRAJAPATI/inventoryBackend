@@ -58,14 +58,14 @@ const deliverySchema = new mongoose.Schema({
   },
   deliveryDate: {
     type: Date,
-    required: true
+    required: false
   },
   vehicleNo: String,
   driverName: String,
   driverContact: String,
   notes: {
     type: String,
-    trim: true
+    trim: false
   },
   status: {
     type: String,

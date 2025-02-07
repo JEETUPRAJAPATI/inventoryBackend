@@ -2,13 +2,24 @@ const express = require('express');
 const router = express.Router();
 const DcutBagmakingController = require('../../controllers/dcut/bagmaking.controller');
 const authMiddleware = require('../../middleware/auth.middleware');
+const OpsertController = require('../../controllers/opsert.controller'); // Correct import
 
 // Apply authentication middleware to all routes
 router.use(authMiddleware);
 
 // D-Cut Bag Making routes
-router.get('/', DcutBagmakingController.list.bind(DcutBagmakingController));
-router.get('/report', DcutBagmakingController.getReport.bind(DcutBagmakingController));
-router.put('/:id', DcutBagmakingController.update.bind(DcutBagmakingController));
+router.get('/bagmaking', DcutBagmakingController.list.bind(DcutBagmakingController));
+router.post('/bagmaking/:orderId/verify', DcutBagmakingController.verifyOrder.bind(DcutBagmakingController));
 
+router.get('/report', DcutBagmakingController.getReport.bind(DcutBagmakingController));
+router.put('/bagmaking/:orderId', DcutBagmakingController.updateDcutBagMakingStatus.bind(DcutBagmakingController));
+
+router.put('/bagmaking/:orderId/opsert', DcutBagmakingController.handleMoveToOpsert.bind(DcutBagmakingController));
+
+
+router.get('/opsert/orders', OpsertController.listOrders.bind(OpsertController));
+router.put('/opsert/orders/:id/status', OpsertController.updateOrderStatus.bind(OpsertController));
+router.post('/opsert/orders/:id/move-to-delivery', OpsertController.moveToDelivery.bind(OpsertController));
+
+;
 module.exports = router;

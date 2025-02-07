@@ -1,46 +1,333 @@
-const DcutBagmaking = require('../../models/DcutBagmaking');
-const logger = require('../../utils/logger');
 
+const ProductionManager = require('../../models/ProductionManager');
+const SalesOrder = require('../../models/SalesOrder');
+const Subcategory = require('../../models/subcategory');
+const logger = require('../../utils/logger');
+const Opsert = require('../../models/Opsert');
+const DcutBagmaking = require('../../models/DcutBagmaking');
 class DcutBagmakingController {
   async list(req, res) {
     try {
-      const { status, jobName, bagType, page = 1, limit = 10 } = req.query;
-      const query = {};
+      // Step 1: Get all SalesOrder records with bagType "d_cut_loop_handle"
+      const salesOrders = await SalesOrder.find({ "bagDetails.type": "d_cut_loop_handle" })
+        .select("orderId bagDetails customerName email mobileNumber address jobName fabricQuality quantity agent status createdAt updatedAt");
 
-      // Apply filters if provided
-      if (status) query.status = status;
-      if (jobName) query.jobName = new RegExp(jobName, 'i');
-      if (bagType) query.bagType = bagType;
+      console.log('salesOrderList----', salesOrders);
 
-      const skip = (page - 1) * limit;
+      if (!salesOrders || salesOrders.length === 0) {
+        return res.status(404).json({
+          success: false,
+          message: "No Sales Orders found with the specified bagType"
+        });
+      }
 
-      const [entries, total] = await Promise.all([
-        DcutBagmaking.find(query)
-          .sort({ createdAt: -1 })
-          .skip(skip)
-          .limit(limit),
-        DcutBagmaking.countDocuments(query)
-      ]);
+      const orderIds = salesOrders.map(order => order.orderId);
+      console.log('orderIds----', orderIds);
 
+      // Step 2: Get the status from the query parameter (defaults to 'pending' if not provided)
+      const statusFilter = req.query.status || "pending"; // Default to 'pending'
+      const validStatuses = ["pending", "in_progress", "completed"];
+
+      // Validate the status filter
+      if (!validStatuses.includes(statusFilter)) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid status provided. Valid statuses are 'pending', 'in_progress', or 'completed'."
+        });
+      }
+
+      // Step 3: Get ProductionManager records (no status filter applied here)
+      const productionManagers = await ProductionManager.find({
+        order_id: { $in: orderIds }
+      });
+
+      console.log('productionManagers----', productionManagers);
+
+      if (!productionManagers || productionManagers.length === 0) {
+        return res.status(200).json({
+          success: true,
+          data: [],
+          message: `No active production manager orders found.`
+        });
+      }
+
+      // Step 4: Get Dcutbagmaking records with status filter applied
+      const DcutbagmakingRecords = await DcutBagmaking.find({
+        order_id: { $in: orderIds },
+        status: statusFilter // Apply status filter here
+      });
+
+      console.log('Dcutbagmaking----', DcutbagmakingRecords);
+
+      // Step 5: Merge the data from SalesOrders, ProductionManagers, and Dcutbagmaking records
+      const result = salesOrders
+        .map(order => {
+          const matchedProductionManagers = productionManagers.filter(pm => pm.order_id === order.orderId);
+          const matchedDcutbagmaking = DcutbagmakingRecords.filter(dcut => dcut.order_id === order.orderId);
+
+          if (matchedProductionManagers.length > 0 && matchedDcutbagmaking.length > 0) {
+            return {
+              ...order.toObject(),
+              productionManagers: matchedProductionManagers,
+              dcutbagmakingDetails: matchedDcutbagmaking
+            };
+          }
+        })
+        .filter(order => order !== undefined); // Filter out undefined entries
+
+      console.log('Filtered result----', result);
+
+      // Return the final result with merged data
       res.json({
         success: true,
-        data: entries,
-        pagination: {
-          currentPage: parseInt(page),
-          totalPages: Math.ceil(total / limit),
-          totalRecords: total,
-          hasNextPage: skip + entries.length < total,
-          hasPrevPage: page > 1
-        }
+        data: result
       });
+
     } catch (error) {
-      logger.error('Error listing D-Cut bag making entries:', error);
+      console.error("Error listing D-Cut bag making entries:", error);
+      res.status(500).json({
+        success: false,
+        message: "An error occurred while fetching the entries. Please try again later."
+      });
+    }
+  }
+
+
+
+  async verifyOrder(req, res) {
+    try {
+      const { orderId } = req.params;
+
+      // Fetch production details from ProductionManager
+      const productionRecord = await ProductionManager.findOne({ order_id: orderId });
+      if (!productionRecord) {
+        return res.status(404).json({
+          success: false,
+          message: 'Production record not found for the given order ID.'
+        });
+      }
+      console.log('productionRecord---------', productionRecord);
+
+      const { roll_size, quantity_kgs } = productionRecord.production_details;
+
+      // Fetch corresponding subcategory based on roll_size and quantity_kgs
+      const matchedSubcategory = await Subcategory.findOne({ rollSize: roll_size, quantity: quantity_kgs });
+      if (!matchedSubcategory) {
+        return res.status(404).json({
+          success: false,
+          message: 'No matching subcategory found for the given production details.'
+        });
+      }
+      console.log('matchedSubcategory---------', matchedSubcategory);
+
+      // Fetch sales order details
+      const salesOrder = await SalesOrder.findOne({ orderId: orderId });
+      if (!salesOrder) {
+        return res.status(404).json({
+          success: false,
+          message: 'Sales order not found for the given order ID.'
+        });
+      }
+      console.log('salesOrder---------', salesOrder);
+
+      // Extract correct fields
+      const { gsm, color: fabricColor } = salesOrder.bagDetails;
+      const { fabricQuality } = salesOrder;
+
+      console.log('-----------------------------------------------');
+
+      console.log("Matched Subcategory - GSM:", matchedSubcategory.gsm);
+      console.log("Sales Order - GSM:", gsm);
+
+      console.log("Matched Subcategory - Fabric Color:", matchedSubcategory.fabricColor);
+      console.log("Sales Order - Fabric Color:", fabricColor);
+
+      console.log("Matched Subcategory - Fabric Quality:", matchedSubcategory.fabricQuality);
+      console.log("Sales Order - Fabric Quality:", fabricQuality);
+
+      // Validate sales order details with subcategory
+      if (
+        matchedSubcategory.gsm === gsm &&
+        matchedSubcategory.fabricColor === fabricColor &&
+        matchedSubcategory.fabricQuality === fabricQuality
+      ) {
+
+        const existingRecord = await DcutBagmaking.findOne({ order_id: orderId });
+        console.log("Existing DcutBagmaking Record:", existingRecord);
+
+        if (!existingRecord) {
+          console.log("No existing record in DcutBagmaking, creating a new one...");
+        }
+
+        // ✅ Update Flexo table status instead of ProductionManager
+        const updateResult = await DcutBagmaking.updateOne(
+          { order_id: orderId },
+          {
+            $set: {
+              status: "in_progress"
+            }
+          },
+          { upsert: true }
+        );
+
+        console.log("Update Result:", updateResult);
+        return res.json({
+          success: true,
+          message: 'Order verification successful.',
+          data: {
+            productionDetails: productionRecord,
+            subcategory: matchedSubcategory,
+            salesOrder
+          }
+        });
+      } else {
+        return res.status(400).json({
+          success: false,
+          message: 'Order verification failed. Mismatch in sales order and subcategory details.'
+        });
+      }
+    } catch (error) {
+      console.error('Error verifying order:', error);
       res.status(500).json({
         success: false,
         message: error.message
       });
     }
   }
+
+  async updateDcutBagMakingStatus(req, res) {
+    try {
+      // Log the request parameters
+      console.log('req.params:', req.params);
+
+      // Extract orderId from URL parameters and status, remarks from the request body
+      const { orderId } = req.params;
+      const { status, remarks } = req.body;
+
+      // Log extracted values
+      console.log('orderId:', orderId);
+      console.log('status:', status);
+      console.log('remarks:', remarks);
+
+      // Define valid statuses
+      const validStatuses = ["pending", "in_progress", "completed"];
+      if (!validStatuses.includes(status)) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid status provided. Valid statuses are 'pending', 'in_progress', or 'completed'."
+        });
+      }
+
+      // Find and update the D-Cut Bag Making record by orderId
+      const dcutBagMaking = await DcutBagmaking.findOneAndUpdate(
+        { order_id: orderId },   // Find record by orderId
+        {
+          status: status,       // Update status
+        },
+        { new: true, runValidators: true } // Return the updated document
+      );
+
+      console.log('dcutBagMaking:', dcutBagMaking); // Log updated document
+
+      // Check if the record was found
+      if (!dcutBagMaking) {
+        return res.status(404).json({
+          success: false,
+          message: `No D-Cut Bag Making record found with orderId: ${orderId}`
+        });
+      }
+
+      // Return success response
+      res.json({
+        success: true,
+        message: `D-Cut Bag Making status updated successfully to '${status}'`,
+        data: dcutBagMaking
+      });
+
+    } catch (error) {
+      console.error("Error updating D-Cut Bag Making status:", error);
+      res.status(500).json({
+        success: false,
+        message: "An error occurred while updating the D-Cut Bag Making status. Please try again later."
+      });
+    }
+  }
+
+
+
+  async handleMoveToOpsert(req, res) {
+    const { orderId } = req.params;
+
+    try {
+      // 1️⃣ Update ProductionManager progress to "D-Cut Opsert"
+      const updatedProductionManager = await ProductionManager.findOneAndUpdate(
+        { order_id: orderId },
+        {
+          $set: { "production_details.progress": "D-Cut Opsert" }
+        },
+        { new: true }
+      );
+
+      if (!updatedProductionManager) {
+        return res.status(404).json({
+          success: false,
+          message: `No Production Manager record found for orderId: ${orderId}`
+        });
+      }
+
+      console.log("✅ ProductionManager Updated:", updatedProductionManager);
+
+      // 2️⃣ Update DcutBagMaking status to "opsert"
+      const updatedDcutBagMaking = await DcutBagmaking.findOneAndUpdate(
+        { order_id: orderId },
+        {
+          $set: { status: "opsert" }
+        },
+        { new: true }
+      );
+
+      if (!updatedDcutBagMaking) {
+        return res.status(404).json({
+          success: false,
+          message: `No D-Cut Bag Making record found for orderId: ${orderId}`
+        });
+      }
+
+      console.log("✅ DcutBagMaking Updated:", updatedDcutBagMaking);
+
+      // 3️⃣ Insert or update Opsert table with status "pending"
+      const opsertRecord = await Opsert.findOneAndUpdate(
+        { order_id: orderId },
+        {
+          $set: { updatedAt: new Date() }, // Update `updatedAt` timestamp
+          $setOnInsert: { status: "pending", createdAt: new Date() }, // Set `status` only on insert
+        },
+        { upsert: true, new: true }
+      );
+
+      console.log("✅ Opsert Record Created/Updated:", opsertRecord);
+
+      return res.status(200).json({
+        success: true,
+        message: "Order moved to Opsert successfully.",
+        data: {
+          productionManager: updatedProductionManager,
+          dcutBagMaking: updatedDcutBagMaking,
+          opsert: opsertRecord
+        }
+      });
+
+    } catch (error) {
+      console.error("❌ Error in handleMoveToOpsert:", error);
+      return res.status(500).json({
+        success: false,
+        message: "An error occurred while moving the order to Opsert. Please try again."
+      });
+    }
+  }
+
+
+
 
   async update(req, res) {
     try {

@@ -1,8 +1,205 @@
+const Delivery = require('../models/Delivery');
 const Opsert = require('../models/Opsert');
+const ProductionManager = require('../models/ProductionManager');
+const SalesOrder = require('../models/SalesOrder');
 const logger = require('../utils/logger');
 
 class OpsertController {
-  async list(req, res) {
+
+  // List orders with the status filter
+  static async listOrders(req, res) {
+    const { status } = req.query;
+    try {
+      // Step 1: Get all SalesOrder records with bagType "d_cut_loop_handle"
+      const salesOrders = await SalesOrder.find({ "bagDetails.type": "d_cut_loop_handle" })
+        .select("orderId bagDetails customerName email mobileNumber address jobName fabricQuality quantity agent status createdAt updatedAt");
+
+      console.log('salesOrderList----', salesOrders);
+
+      if (!salesOrders || salesOrders.length === 0) {
+        return res.status(404).json({
+          success: false,
+          message: "No Sales Orders found with the specified bagType"
+        });
+      }
+
+      const orderIds = salesOrders.map(order => order.orderId);
+      console.log('orderIds----', orderIds);
+
+      // Step 2: Get the status from the query parameter (defaults to 'pending' if not provided)
+      const statusFilter = req.query.status || "pending"; // Default to 'pending'
+      const validStatuses = ["pending", "in_progress", "completed"];
+
+      // Validate the status filter
+      if (!validStatuses.includes(statusFilter)) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid status provided. Valid statuses are 'pending', 'in_progress', or 'completed'."
+        });
+      }
+
+      // Step 3: Get ProductionManager records (no status filter applied here)
+      const productionManagers = await ProductionManager.find({
+        order_id: { $in: orderIds }
+      });
+
+      console.log('productionManagers----', productionManagers);
+
+      if (!productionManagers || productionManagers.length === 0) {
+        return res.status(200).json({
+          success: true,
+          data: [],
+          message: `No active production manager orders found.`
+        });
+      }
+
+      // Step 4: Get Opsert records with status filter applied
+      const opsertRecords = await Opsert.find({
+        order_id: { $in: orderIds },
+        status: statusFilter // Apply status filter here
+      });
+
+      console.log('Opsert records----', opsertRecords);
+
+      // Step 5: Merge the data from SalesOrders, ProductionManagers, and Opsert records
+      const result = salesOrders
+        .map(order => {
+          const matchedProductionManagers = productionManagers.filter(pm => pm.order_id === order.orderId);
+          const matchedOpserts = opsertRecords.filter(opsert => opsert.order_id === order.orderId);
+
+          if (matchedProductionManagers.length > 0 && matchedOpserts.length > 0) {
+            return {
+              ...order.toObject(),
+              productionManagers: matchedProductionManagers,
+              opsertDetails: matchedOpserts
+            };
+          }
+        })
+        .filter(order => order !== undefined); // Filter out undefined entries
+
+      console.log('Filtered result----', result);
+
+      // Return the final result with merged data
+      res.json({
+        success: true,
+        data: result
+      });
+
+    } catch (error) {
+      console.error("Error listing Opsert entries:", error);
+      res.status(500).json({
+        success: false,
+        message: "An error occurred while fetching the entries. Please try again later."
+      });
+    }
+  }
+
+
+
+
+  static async updateOrderStatus(req, res) {
+    const { id } = req.params; // Order ID from route params
+    const { status, remarks } = req.body; // Status and remarks from request body
+
+    console.log('id', id);
+    console.log(status, remarks);
+    try {
+      // Find the opsert record matching the order ID and status filter (only one record)
+      const opsertRecord = await Opsert.findOne({
+        order_id: id,  // Use `id` directly for filtering
+      });
+      console.log('opsertRecord', opsertRecord);
+      if (!opsertRecord) {
+        return res.status(404).json({ message: 'Opsert record not found' });
+      }
+
+      // Update the status and remarks for the found record
+      opsertRecord.status = status;
+      opsertRecord.remarks = remarks || opsertRecord.remarks;  // Keep old remarks if not provided
+
+      await opsertRecord.save();  // Save the updated record
+
+      return res.status(200).json({
+        success: true,
+        message: 'Opsert record status updated successfully',
+        opsertRecord
+      });
+    } catch (error) {
+      console.error(error);
+      return res.status(500).json({ message: 'Error updating order status' });
+    }
+  }
+
+
+
+
+  static async moveToDelivery(req, res) {
+    const { id } = req.params;
+    try {
+      // Step 1: Update status in `orders_opsert` table to "delivery"
+      const opsertRecord = await Opsert.findOne({
+        order_id: id,  // Use `id` directly for filtering
+      });
+      console.log('opsertRecord', opsertRecord);
+      if (!opsertRecord) {
+        return res.status(404).json({ message: 'Opsert record not found' });
+      }
+
+      opsertRecord.status = 'delivery';
+      await opsertRecord.save();
+
+      // Step 2: Find and update `production_manager` table
+      const productionOrder = await ProductionManager.findOne({ where: { order_id: id } });
+
+      if (productionOrder) {
+        await productionOrder.update({
+          process: 'move to Delivery',
+          status: 'completed'
+        });
+      }
+
+      // Step 3: Create entry in `delivery` table with status "pending"
+      await Delivery.create({
+        orderId: id,
+        status: 'pending'
+      });
+
+      return res.status(200).json({ message: 'Order moved to delivery successfully' });
+    } catch (error) {
+      console.error('Error moving order to delivery:', error);
+      return res.status(500).json({ message: 'Failed to move order to delivery' });
+    }
+  }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  async listOpsertList(req, res) {
     try {
       const { status, jobName, bagType, page = 1, limit = 10 } = req.query;
       const query = {};
@@ -185,4 +382,5 @@ class OpsertController {
   }
 }
 
-module.exports = new OpsertController();
+
+module.exports = OpsertController; // Ensure proper export
