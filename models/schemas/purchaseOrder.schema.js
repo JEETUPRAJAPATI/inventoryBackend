@@ -26,14 +26,14 @@ const purchaseOrderSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ['Pending', 'Approved', 'Ordered', 'Received', 'Cancelled'],
+    enum: ['pending', 'approved', 'ordered', 'received', 'cancelled'],
     default: 'Pending'
   },
   notes: {
     type: String,
     required: true
   },
-  orderNumber: {
+  order_number: {
     type: String,
     required: true
   },

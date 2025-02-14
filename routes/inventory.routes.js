@@ -57,7 +57,7 @@ router.delete(
 
 // Purchase Order routes
 router.post(
-  "/purchase-order",
+  "/purchase-orders",
   PurchaseOrderController.create.bind(PurchaseOrderController)
 );
 router.get(
