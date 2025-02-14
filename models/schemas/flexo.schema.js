@@ -8,7 +8,7 @@ const flexoSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ['pending', 'in_progress', 'completed', 'w_cut_bagmaking', 'billing'],
+    enum: ['pending', 'in_progress', 'completed', 'w_cut_bag_making', 'billing'],
     default: 'pending'
   },
   remarks: {

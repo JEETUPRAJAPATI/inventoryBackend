@@ -6,15 +6,9 @@ class DCutProductionController {
   async getOpsertPrinting(req, res) {
     try {
       const { status, date, page = 1, limit = 10 } = req.query;
-      const productions = await ProductionService.getProduction({
-        bagType: BAG_TYPES.D_CUT,
-        operatorType: OPERATOR_TYPES.OPSERT_PRINTING,
-        status,
-        date,
-        page,
-        limit
+      const productions = await ProductionService.getOpsertPrinting({
+        status
       });
-
       res.json({
         success: true,
         data: productions.data,
@@ -29,13 +23,8 @@ class DCutProductionController {
   async getBagMaking(req, res) {
     try {
       const { status, operator_name, page = 1, limit = 10 } = req.query;
-      const productions = await ProductionService.getProduction({
-        bagType: BAG_TYPES.D_CUT,
-        operatorType: OPERATOR_TYPES.BAG_MAKING,
-        status,
-        operator_name,
-        page,
-        limit
+      const productions = await ProductionService.getDcutBagMaking({
+        status
       });
 
       res.json({

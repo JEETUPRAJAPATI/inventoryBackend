@@ -6,17 +6,33 @@ class DeliveryQueryService {
 
   async findById(id) {
     try {
+      // Fetch the delivery details
       const delivery = await Delivery.findById(id);
       if (!delivery) {
         throw new Error('Delivery not found');
       }
 
-      return delivery;
+      // Fetch the related sales order using orderId
+      const salesOrder = await SalesOrder.findOne({ orderId: delivery.orderId });
+      if (!salesOrder) {
+        throw new Error('Sales order not found');
+      }
+
+      // Prepare the response including delivery and customer details
+      return {
+        success: true,
+        data: {
+          ...delivery.toObject(),
+          customer: salesOrder.customerName,
+          contact: salesOrder.mobileNumber
+        }
+      };
     } catch (error) {
       logger.error('Error fetching delivery by ID:', error);
       throw error;
     }
   }
+
 
   async findByOrderId(orderId) {
     try {
@@ -28,42 +44,29 @@ class DeliveryQueryService {
     }
   }
 
-  async list({
-    status,
-    dateRange,
-    customerName,
-    sortBy = 'createdAt',
-    sortOrder = 'desc',
-    page = 1,
-    limit = 10
-  }) {
+  async list({ status, dateRange, customerName, sortBy = "createdAt", sortOrder = "desc" }) {
     try {
       const query = {};
 
-      if (status) query.status = status;
-      if (customerName) query.customerName = new RegExp(customerName, 'i');
-
-      if (dateRange) {
-        const [startDate, endDate] = dateRange.split(',');
-        query.createdAt = {
-          $gte: new Date(startDate),
-          $lte: new Date(endDate)
-        };
+      // Fix status filter
+      if (status) {
+        query.status = status;
       }
 
-      const skip = (page - 1) * limit;
-      const sort = { [sortBy]: sortOrder === 'desc' ? -1 : 1 };
+      if (customerName) {
+        query.customerName = new RegExp(customerName, "i"); // Case-insensitive search
+      }
 
-      // Fetch deliveries with pagination
-      const [deliveries, total] = await Promise.all([
-        Delivery.find(query)
-          .skip(skip)
-          .limit(limit)
-          .sort(sort),
-        Delivery.countDocuments(query)
-      ]);
+      if (dateRange) {
+        query.createdAt = dateRange;
+      }
 
-      // Fetch order details from salesorders table
+      const sort = { [sortBy]: sortOrder === "desc" ? -1 : 1 };
+
+      // Fetch all deliveries (no pagination)
+      const deliveries = await Delivery.find(query).sort(sort);
+
+      // Fetch order details from SalesOrder table
       const enrichedDeliveries = await Promise.all(
         deliveries.map(async (delivery) => {
           const orderDetails = await SalesOrder.findOne({ orderId: delivery.orderId });
@@ -74,18 +77,9 @@ class DeliveryQueryService {
         })
       );
 
-      return {
-        data: enrichedDeliveries,
-        pagination: {
-          currentPage: parseInt(page),
-          totalPages: Math.ceil(total / limit),
-          totalRecords: total,
-          hasNextPage: skip + deliveries.length < total,
-          hasPrevPage: page > 1
-        }
-      };
+      return { data: enrichedDeliveries };
     } catch (error) {
-      logger.error('Error querying deliveries:', error);
+      logger.error("Error querying deliveries:", error);
       throw error;
     }
   }

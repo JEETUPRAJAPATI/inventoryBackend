@@ -16,6 +16,7 @@ class SalesOrderService {
         email: orderData.email,
         mobileNumber: orderData.mobileNumber,
         address: orderData.address,
+        orderPrice:orderData.orderPrice,
         bagDetails: {
           type: orderData.bagDetails.type, // Correct field names
           handleColor: orderData.bagDetails.handleColor,

@@ -1,28 +1,15 @@
 const mongoose = require('mongoose');
 
 const invoiceSchema = new mongoose.Schema({
-  invoice_id: {
-    type: String,
-    required: true,
-    unique: true
-  },
   order_id: {
     type: String,
     required: true
   },
-  customer: {
-    type: String,
-    required: true
-  },
-  amount: {
-    type: Number,
-    required: true,
-    min: 0
-  },
   date: {
     type: Date,
-    required: true
+    required: false
   },
+  type: { type: String, required: true },
   status: {
     type: String,
     enum: ['Pending', 'Paid', 'Overdue', 'Cancelled'],
@@ -38,7 +25,7 @@ const invoiceSchema = new mongoose.Schema({
   }
 });
 
-invoiceSchema.pre('save', function(next) {
+invoiceSchema.pre('save', function (next) {
   this.updatedAt = new Date();
   next();
 });

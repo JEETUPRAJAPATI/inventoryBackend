@@ -57,6 +57,11 @@ const salesOrderSchema = new mongoose.Schema({
     unique: true,
     required: true
   },
+  orderPrice:{
+    type: String,
+    unique: true,
+    required: true
+  },
   productionManager: { type: mongoose.Schema.Types.ObjectId, ref: 'ProductionManager' },
   createdAt: {
     type: Date,

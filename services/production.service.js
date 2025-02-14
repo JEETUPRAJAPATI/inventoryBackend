@@ -1,6 +1,11 @@
 const Production = require('../models/Production');
 const { BAG_TYPES, OPERATOR_TYPES } = require('../config/constants');
 const logger = require('../utils/logger');
+const Flexo = require('../models/Flexo');
+const SalesOrder = require('../models/SalesOrder');
+const WcutBagmaking = require('../models/WcutBagmaking');
+const DcutBagmaking = require('../models/DcutBagmaking');
+const Opsert = require('../models/Opsert');
 
 class ProductionService {
   async getProduction({ bagType, operatorType, status, date, page = 1, limit = 10 }) {
@@ -35,62 +40,125 @@ class ProductionService {
       throw error;
     }
   }
-  async getFlexoPrinting({ status, date, page = 1, limit = 10 }) {
+
+  async getFlexoPrinting({ status, date }) {
     try {
-      const query = {
-        bagType: BAG_TYPES.W_CUT,
-        operatorType: OPERATOR_TYPES.FLEXO_PRINTING
-      };
-      if (status && status !== 'all') query.status = status;
+      const match = {};
+      if (status && status !== 'all') match.status = status;
       if (date) {
         const formattedDate = new Date(date);
-        query.productionDate = formattedDate;
+        match.productionDate = formattedDate;
       }
-      const skip = (page - 1) * limit;
 
-      const productions = await Production.find(query).skip(skip).limit(limit);
-      const total = await Production.countDocuments(query);
+      const flexoDocuments = await Flexo.aggregate([
+        { $match: match },
+        {
+          $lookup: {
+            from: 'salesorders', // Ensure this matches the actual collection name
+            let: { flexoOrderId: '$order_id' },
+            pipeline: [
+              { $match: { $expr: { $eq: ['$orderId', '$$flexoOrderId'] } } }
+            ],
+            as: 'orderDetails'
+          }
+        },
+        { $unwind: '$orderDetails' } // Deconstructs the array to a single object
+      ]);
 
-      return {
-        data: productions,
-        pagination: {
-          currentPage: parseInt(page),
-          totalPages: Math.ceil(total / limit),
-          totalRecords: total
-        }
-      };
+      return { data: flexoDocuments };
     } catch (error) {
-      logger.error('Error fetching Flexo Printing production:', error);
+      console.error('Error fetching Flexo Printing production:', error);
       throw error;
     }
   }
 
-  async getBagMaking({ status, operator_name, page = 1, limit = 10 }) {
+
+
+
+  async getBagMaking({ status, operator_name }) {
     try {
-      const query = {
-        bagType: BAG_TYPES.W_CUT,
-        operatorType: OPERATOR_TYPES.BAG_MAKING
-      };
-      if (status && status !== 'all') query.status = status;
-      if (operator_name) query.operatorName = operator_name;
-      const skip = (page - 1) * limit;
+      const match = {};
+      if (status && status !== 'all') match.status = status;
 
-      const productions = await Production.find(query).skip(skip).limit(limit);
-      const total = await Production.countDocuments(query);
+      const flexoDocuments = await WcutBagmaking.aggregate([
+        { $match: match },
+        {
+          $lookup: {
+            from: 'salesorders', // Ensure this matches the actual collection name
+            let: { flexoOrderId: '$order_id' },
+            pipeline: [
+              { $match: { $expr: { $eq: ['$orderId', '$$flexoOrderId'] } } }
+            ],
+            as: 'orderDetails'
+          }
+        },
+        { $unwind: '$orderDetails' } // Deconstructs the array to a single object
+      ]);
 
-      return {
-        data: productions,
-        pagination: {
-          currentPage: parseInt(page),
-          totalPages: Math.ceil(total / limit),
-          totalRecords: total
-        }
-      };
+      return { data: flexoDocuments };
     } catch (error) {
-      logger.error('Error fetching Bag Making production:', error);
+      console.error('Error fetching Flexo Printing production:', error);
       throw error;
     }
   }
+
+  async getOpsertPrinting({ status }) {
+    try {
+      const match = {};
+      if (status && status !== 'all') match.status = status;
+
+      const flexoDocuments = await Opsert.aggregate([
+        { $match: match },
+        {
+          $lookup: {
+            from: 'salesorders', // Ensure this matches the actual collection name
+            let: { flexoOrderId: '$order_id' },
+            pipeline: [
+              { $match: { $expr: { $eq: ['$orderId', '$$flexoOrderId'] } } }
+            ],
+            as: 'orderDetails'
+          }
+        },
+        { $unwind: '$orderDetails' } // Deconstructs the array to a single object
+      ]);
+
+      return { data: flexoDocuments };
+    } catch (error) {
+      console.error('Error fetching Flexo Printing production:', error);
+      throw error;
+    }
+  }
+
+
+
+
+  async getDcutBagMaking({ status }) {
+    try {
+      const match = {};
+      if (status && status !== 'all') match.status = status;
+
+      const flexoDocuments = await DcutBagmaking.aggregate([
+        { $match: match },
+        {
+          $lookup: {
+            from: 'salesorders', // Ensure this matches the actual collection name
+            let: { flexoOrderId: '$order_id' },
+            pipeline: [
+              { $match: { $expr: { $eq: ['$orderId', '$$flexoOrderId'] } } }
+            ],
+            as: 'orderDetails'
+          }
+        },
+        { $unwind: '$orderDetails' } // Deconstructs the array to a single object
+      ]);
+
+      return { data: flexoDocuments };
+    } catch (error) {
+      console.error('Error fetching Flexo Printing production:', error);
+      throw error;
+    }
+  }
+
 }
 
 module.exports = new ProductionService();

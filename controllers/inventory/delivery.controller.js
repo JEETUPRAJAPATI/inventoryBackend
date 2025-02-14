@@ -80,6 +80,7 @@ class DeliveryController {
                 page,
                 limit
             } = req.query;
+            console.log('delivery', req.query);
             const result = await DeliveryQueryService.list({
                 status,
                 dateRange,

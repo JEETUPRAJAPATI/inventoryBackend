@@ -8,11 +8,9 @@ class WCutProductionController {
       const { status, date, page = 1, limit = 10 } = req.query;
       const productions = await ProductionService.getFlexoPrinting({
         status,
-        date,
-        page,
-        limit
+        date
       });
-
+      console.log('production data',productions);
       res.json({
         success: true,
         data: productions.data,

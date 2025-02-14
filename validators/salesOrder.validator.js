@@ -21,7 +21,8 @@ const salesOrderSchema = Joi.object({
   fabricQuality: Joi.string().required(),
   quantity: Joi.number().min(1).required(),
   agent: Joi.string().required(),
-  status: Joi.string().valid('pending', 'processing', 'completed', 'cancelled')
+  status: Joi.string().valid('pending', 'processing', 'completed', 'cancelled'),
+  orderPrice: Joi.number().positive().precision(2).required(),
 });
 
 module.exports = {

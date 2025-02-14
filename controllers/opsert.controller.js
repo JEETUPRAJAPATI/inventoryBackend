@@ -1,6 +1,7 @@
 const Delivery = require('../models/Delivery');
 const Opsert = require('../models/Opsert');
 const ProductionManager = require('../models/ProductionManager');
+const Report = require('../models/Report');
 const SalesOrder = require('../models/SalesOrder');
 const logger = require('../utils/logger');
 
@@ -157,6 +158,16 @@ class OpsertController {
           status: 'completed'
         });
       }
+
+      // 4️⃣ Insert the removed record into the Reports table
+      const ReportList = await Report.create({
+        order_id: id,
+        status: "completed",
+        type: "d_cut_opsert",
+        createdAt: new Date(),
+        updatedAt: new Date()
+      });
+      console.log("✅ Report Record Created:", Report);
 
       // Step 3: Create entry in `delivery` table with status "pending"
       await Delivery.create({

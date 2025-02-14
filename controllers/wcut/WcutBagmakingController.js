@@ -6,6 +6,8 @@ const Subcategory = require('../../models/subcategory');
 const Flexo = require('../../models/Flexo');
 const logger = require('../../utils/logger');
 const Delivery = require('../../models/Delivery');
+const Report = require('../../models/Report');
+const Invoice = require('../../models/Invoice');
 
 class WcutBagmakingController {
   async list(req, res) {
@@ -109,18 +111,6 @@ class WcutBagmakingController {
       }
       console.log('productionRecord---------', productionRecord);
 
-      const { roll_size, quantity_kgs } = productionRecord.production_details;
-
-      // Fetch corresponding subcategory based on roll_size and quantity_kgs
-      const matchedSubcategory = await Subcategory.findOne({ rollSize: roll_size, quantity: quantity_kgs });
-      if (!matchedSubcategory) {
-        return res.status(404).json({
-          success: false,
-          message: 'No matching subcategory found for the given production details.'
-        });
-      }
-      console.log('matchedSubcategory---------', matchedSubcategory);
-
       // Fetch sales order details
       const salesOrder = await SalesOrder.findOne({ orderId: orderId });
       if (!salesOrder) {
@@ -134,6 +124,19 @@ class WcutBagmakingController {
       // Extract correct fields
       const { gsm, color: fabricColor } = salesOrder.bagDetails;
       const { fabricQuality } = salesOrder;
+      const { roll_size, quantity_kgs } = productionRecord.production_details;
+
+      // Fetch corresponding subcategory based on roll_size and quantity_kgs
+      const matchedSubcategory = await Subcategory.findOne({ rollSize: roll_size, gsm: gsm, fabricColor: fabricColor, quantity: quantity_kgs });
+      if (!matchedSubcategory) {
+        return res.status(404).json({
+          success: false,
+          message: 'No matching subcategory found for the given production details.'
+        });
+      }
+      console.log('matchedSubcategory---------', matchedSubcategory);
+
+
 
       console.log('-----------------------------------------------');
 
@@ -280,7 +283,7 @@ class WcutBagmakingController {
       const updatedFlexo = await Flexo.findOneAndUpdate(
         { order_id: orderId },
         {
-          $set: { status: "w_cut_bagmaking" }  // Change to "w_cut_bagmaking"
+          $set: { status: "w_cut_bag_making" }  // Change to "w_cut_bagmaking"
         },
         { new: true }
       );
@@ -305,6 +308,16 @@ class WcutBagmakingController {
       );
 
       console.log("✅ WcutBagmaking Record Created/Updated:", wcutBagmakingRecord);
+
+      const ReportList = await Report.create({
+        order_id: orderId,
+        status: "completed",
+        type: "w_cut_flexo",
+        createdAt: new Date(),
+        updatedAt: new Date()
+      });
+
+      console.log('Report Inserted:', ReportList);
 
       return res.status(200).json({
         success: true,
@@ -490,6 +503,15 @@ class WcutBagmakingController {
           }
         );
       }
+      const ReportList = await Report.create({
+        order_id: id,
+        status: "completed",
+        type: "w_cut_bag_making",
+        createdAt: new Date(),
+        updatedAt: new Date()
+      });
+
+      console.log('Report Inserted:', ReportList);
 
       // Step 3: Create entry in `delivery` table with status "pending"
       await Delivery.create({
@@ -505,10 +527,61 @@ class WcutBagmakingController {
     }
   }
 
+  async directBilling(req, res) {
+    const { orderId } = req.params;
+    const { type } = req.body;
 
+    try {
+      // 1️⃣ Find and remove the DcutBagmaking record
+      const opsertRecord = await Flexo.findOne({
+        order_id: id,    // Use `id` directly for filtering
+      });
 
+      console.log('opsertRecord', opsertRecord);  // Make sure the record is found
 
+      if (!opsertRecord) {
+        return res.status(404).json({ message: 'No W-Cut Bag Making record found for orderId' });
+      }
 
+      opsertRecord.status = 'delivered';  // Use "delivery", not "delivered"
+      await opsertRecord.save();
+
+      console.log("✅ Flexo Record Removed:", FlexoRecord);
+
+      // 2️⃣ Insert a record into the Invoice table
+      const invoiceRecord = await Invoice.create({
+        order_id: orderId,
+        status: "Pending",
+        type: type,
+        createdAt: new Date(),
+      });
+
+      console.log("✅ Invoice Record Created:", invoiceRecord);
+
+      // 4️⃣ Insert the removed record into the Reports table
+      const ReportList = await Report.create({
+        order_id: id,
+        status: "completed",
+        type: "w_cut_flexo",
+        createdAt: new Date(),
+        updatedAt: new Date()
+      });
+      console.log("✅ Report Record Created:", Report);
+
+      return res.status(200).json({
+        success: true,
+        message: "Direct billing completed successfully.",
+        data: { invoice: invoiceRecord },
+      });
+
+    } catch (error) {
+      console.error("❌ Error in directBilling:", error);
+      return res.status(500).json({
+        success: false,
+        message: "An error occurred while processing direct billing.",
+      });
+    }
+  }
 
 
 
@@ -659,6 +732,99 @@ class WcutBagmakingController {
       });
     }
   }
+
+
+  async getRecordsByType(req, res) {
+    try {
+      // Fetch all reports where type is 'w_cut_flexo'
+      const reports = await Report.find({ type: 'w_cut_flexo' });
+
+      // Fetch related sales orders and merge data
+      const result = await Promise.all(reports.map(async (report) => {
+        const salesOrder = await SalesOrder.findOne({ orderId: report.order_id });
+
+        return {
+          orderId: report.order_id,
+          status: report.status,
+          jobName: salesOrder ? salesOrder.jobName : 'N/A',
+          bagType: salesOrder ? report.type : 'N/A',
+          quantity: salesOrder ? salesOrder.quantity : 'N/A',
+          customer: salesOrder ? salesOrder.customerName : 'N/A',
+          contact: salesOrder ? salesOrder.mobileNumber : 'N/A',
+          createdAt: report.createdAt,
+        };
+      }));
+      console.log('result is ', result);
+      res.status(200).json({ success: true, data: result });
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ message: 'Error fetching records', error });
+    }
+  }
+
+  async getRecordsBagmakingByType(req, res) {
+    try {
+      // Fetch all reports where type is 'w_cut_flexo'
+      const reports = await Report.find({ type: 'w_cut_bag_making' });
+
+      // Fetch related sales orders and merge data
+      const result = await Promise.all(reports.map(async (report) => {
+        const salesOrder = await SalesOrder.findOne({ orderId: report.order_id });
+
+        return {
+          orderId: report.order_id,
+          status: report.status,
+          jobName: salesOrder ? salesOrder.jobName : 'N/A',
+          bagType: salesOrder ? report.type : 'N/A',
+          quantity: salesOrder ? salesOrder.quantity : 'N/A',
+          customer: salesOrder ? salesOrder.customerName : 'N/A',
+          contact: salesOrder ? salesOrder.mobileNumber : 'N/A',
+          createdAt: report.createdAt,
+        };
+      }));
+      console.log('result is ', result);
+      res.status(200).json({ success: true, data: result });
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ message: 'Error fetching records', error });
+    }
+  }
+  // Update a record
+  // async updateProductionManagerStatus(req, res) {
+  //   try {
+  //     const { orderId } = req.params;
+  //     const updatedRecord = await Report.findOneAndUpdate(
+  //       { order_id: orderId },
+  //       req.body,
+  //       { new: true }
+  //     );
+
+  //     if (!updatedRecord) {
+  //       return res.status(404).json({ message: 'Record not found' });
+  //     }
+
+  //     res.status(200).json(updatedRecord);
+  //   } catch (error) {
+  //     res.status(500).json({ message: 'Error updating record', error });
+  //   }
+  // }
+
+  // Delete a record permanently
+  async deleteRecord(req, res) {
+    try {
+      const { orderId } = req.params;
+      const deletedRecord = await Report.findOneAndDelete({ order_id: orderId });
+
+      if (!deletedRecord) {
+        return res.status(404).json({ message: 'Record not found' });
+      }
+
+      res.status(200).json({ message: 'Record deleted successfully' });
+    } catch (error) {
+      res.status(500).json({ message: 'Error deleting record', error });
+    }
+  }
+
 }
 
 module.exports = new WcutBagmakingController();

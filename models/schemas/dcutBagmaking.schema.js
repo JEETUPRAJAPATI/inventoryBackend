@@ -8,7 +8,7 @@ const dcutBagmakingSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ['pending', 'in_progress', 'completed', 'billing', 'opsert'],
+    enum: ['pending', 'in_progress', 'completed', 'billing', 'opsert', 'delivered'],
     default: 'pending'
   },
   remarks: {

@@ -5,6 +5,8 @@ const Subcategory = require('../../models/subcategory');
 const logger = require('../../utils/logger');
 const Opsert = require('../../models/Opsert');
 const DcutBagmaking = require('../../models/DcutBagmaking');
+const Report = require('../../models/Report');
+const Invoice = require('../../models/Invoice');
 class DcutBagmakingController {
   async list(req, res) {
     try {
@@ -108,17 +110,6 @@ class DcutBagmakingController {
       }
       console.log('productionRecord---------', productionRecord);
 
-      const { roll_size, quantity_kgs } = productionRecord.production_details;
-
-      // Fetch corresponding subcategory based on roll_size and quantity_kgs
-      const matchedSubcategory = await Subcategory.findOne({ rollSize: roll_size, quantity: quantity_kgs });
-      if (!matchedSubcategory) {
-        return res.status(404).json({
-          success: false,
-          message: 'No matching subcategory found for the given production details.'
-        });
-      }
-      console.log('matchedSubcategory---------', matchedSubcategory);
 
       // Fetch sales order details
       const salesOrder = await SalesOrder.findOne({ orderId: orderId });
@@ -133,6 +124,19 @@ class DcutBagmakingController {
       // Extract correct fields
       const { gsm, color: fabricColor } = salesOrder.bagDetails;
       const { fabricQuality } = salesOrder;
+      const { roll_size, quantity_kgs } = productionRecord.production_details;
+
+      // Fetch corresponding subcategory based on roll_size and quantity_kgs
+      const matchedSubcategory = await Subcategory.findOne({ rollSize: roll_size, gsm: gsm, fabricColor: fabricColor, quantity: quantity_kgs });
+      if (!matchedSubcategory) {
+        return res.status(404).json({
+          success: false,
+          message: 'No matching subcategory found for the given production details.'
+        });
+      }
+      console.log('matchedSubcategory---------', matchedSubcategory);
+
+
 
       console.log('-----------------------------------------------');
 
@@ -257,7 +261,7 @@ class DcutBagmakingController {
 
   async handleMoveToOpsert(req, res) {
     const { orderId } = req.params;
-
+    const { type } = req.body;
     try {
       // 1️⃣ Update ProductionManager progress to "D-Cut Opsert"
       const updatedProductionManager = await ProductionManager.findOneAndUpdate(
@@ -277,23 +281,40 @@ class DcutBagmakingController {
 
       console.log("✅ ProductionManager Updated:", updatedProductionManager);
 
-      // 2️⃣ Update DcutBagMaking status to "opsert"
-      const updatedDcutBagMaking = await DcutBagmaking.findOneAndUpdate(
+      // 3️⃣ Remove the DcutBagMaking record after updating
+      // await DcutBagmaking.deleteOne({ order_id: orderId });
+
+      // 2️⃣ Update Flexo (DcutBagMaking) status to "w_cut_bagmaking"
+      const DcutBagmakingList = await DcutBagmaking.findOneAndUpdate(
         { order_id: orderId },
         {
-          $set: { status: "opsert" }
+          $set: { status: "delivered" }  // Change to "w_cut_bagmaking"
         },
         { new: true }
       );
 
-      if (!updatedDcutBagMaking) {
+      if (!DcutBagmakingList) {
         return res.status(404).json({
           success: false,
-          message: `No D-Cut Bag Making record found for orderId: ${orderId}`
+          message: `No DcutBagmakingList record found for orderId: ${orderId}`
         });
       }
 
-      console.log("✅ DcutBagMaking Updated:", updatedDcutBagMaking);
+      console.log("✅ DcutBagmakingList Updated:", DcutBagmakingList);
+
+
+      console.log("✅ DcutBagMaking Record Removed for orderId:", orderId);
+
+      // 4️⃣ Insert the removed record into the Reports table
+      const ReportList = await Report.create({
+        order_id: orderId,
+        status: "completed",
+        type: "d_cut_bag_making",
+        createdAt: new Date(),
+        updatedAt: new Date()
+      });
+
+      console.log("✅ Report Record Created:", Report);
 
       // 3️⃣ Insert or update Opsert table with status "pending"
       const opsertRecord = await Opsert.findOneAndUpdate(
@@ -312,7 +333,6 @@ class DcutBagmakingController {
         message: "Order moved to Opsert successfully.",
         data: {
           productionManager: updatedProductionManager,
-          dcutBagMaking: updatedDcutBagMaking,
           opsert: opsertRecord
         }
       });
@@ -328,6 +348,64 @@ class DcutBagmakingController {
 
 
 
+  async directBilling(req, res) {
+    const { orderId } = req.params;
+    const { type } = req.body;
+
+    try {
+      // 1️⃣ Find and remove the DcutBagmaking record
+      const DcutBagmakingList = await DcutBagmaking.findOneAndUpdate(
+        { order_id: orderId },
+        {
+          $set: { status: "delivered" }  // Change to "w_cut_bagmaking"
+        },
+        { new: true }
+      );
+
+      if (!DcutBagmakingList) {
+        return res.status(404).json({
+          success: false,
+          message: `No DcutBagmakingList record found for orderId: ${orderId}`
+        });
+      }
+
+      console.log("✅ DcutBagmakingList Updated:", DcutBagmakingList);
+
+      // 2️⃣ Insert a record into the Invoice table
+      const invoiceRecord = await Invoice.create({
+        order_id: orderId,
+        status: "Pending",
+        type: type,
+        createdAt: new Date(),
+      });
+
+      console.log("✅ Invoice Record Created:", invoiceRecord);
+
+      // 4️⃣ Insert the removed record into the Reports table
+      const ReportList = await Report.create({
+        order_id: id,
+        status: "completed",
+        type: "d_cut_bag_making",
+        createdAt: new Date(),
+        updatedAt: new Date()
+      });
+      console.log("✅ Report Record Created:", Report);
+
+
+      return res.status(200).json({
+        success: true,
+        message: "Direct billing completed successfully.",
+        data: { invoice: invoiceRecord },
+      });
+
+    } catch (error) {
+      console.error("❌ Error in directBilling:", error);
+      return res.status(500).json({
+        success: false,
+        message: "An error occurred while processing direct billing.",
+      });
+    }
+  }
 
   async update(req, res) {
     try {
@@ -384,6 +462,71 @@ class DcutBagmakingController {
       });
     }
   }
+
+
+
+
+
+  async getRecordsByType(req, res) {
+    try {
+      // Fetch all reports where type is 'w_cut_flexo'
+      const reports = await Report.find({ type: 'd_cut_bag_making' });
+
+      // Fetch related sales orders and merge data
+      const result = await Promise.all(reports.map(async (report) => {
+        const salesOrder = await SalesOrder.findOne({ orderId: report.order_id });
+
+        return {
+          orderId: report.order_id,
+          status: report.status,
+          jobName: salesOrder ? salesOrder.jobName : 'N/A',
+          bagType: salesOrder ? report.type : 'N/A',
+          quantity: salesOrder ? salesOrder.quantity : 'N/A',
+          customer: salesOrder ? salesOrder.customerName : 'N/A',
+          contact: salesOrder ? salesOrder.mobileNumber : 'N/A',
+          createdAt: report.createdAt,
+        };
+      }));
+      console.log('result is ', result);
+      res.status(200).json({ success: true, data: result });
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ message: 'Error fetching records', error });
+    }
+  }
+
+  async getRecordsBagmakingByType(req, res) {
+    try {
+      // Fetch all reports where type is 'w_cut_flexo'
+      const reports = await Report.find({ type: 'd_cut_opsert' });
+
+      // Fetch related sales orders and merge data
+      const result = await Promise.all(reports.map(async (report) => {
+        const salesOrder = await SalesOrder.findOne({ orderId: report.order_id });
+
+        return {
+          orderId: report.order_id,
+          status: report.status,
+          jobName: salesOrder ? salesOrder.jobName : 'N/A',
+          bagType: salesOrder ? report.type : 'N/A',
+          quantity: salesOrder ? salesOrder.quantity : 'N/A',
+          customer: salesOrder ? salesOrder.customerName : 'N/A',
+          contact: salesOrder ? salesOrder.mobileNumber : 'N/A',
+          createdAt: report.createdAt,
+        };
+      }));
+      console.log('getRecordsBagmakingByType', result);
+      res.status(200).json({ success: true, data: result });
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ message: 'Error fetching records', error });
+    }
+  }
+
+
+
+
+
 
   async getReport(req, res) {
     try {
