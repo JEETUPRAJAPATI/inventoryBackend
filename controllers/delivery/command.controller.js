@@ -2,7 +2,8 @@ const DeliveryCommandService = require('../../services/delivery/command.service'
 const DeliveryQueryService = require('../../services/delivery/query.service');
 const { createDeliverySchema, updateDeliverySchema } = require('../../validators/delivery.validator');
 const logger = require('../../utils/logger');
-
+const Delivery = require('../../models/Delivery');
+const FinishedProduct = require('../../models/FinishedProduct');
 class DeliveryCommandController {
   async create(req, res) {
 
@@ -15,7 +16,6 @@ class DeliveryCommandController {
           message: error.details[0].message
         });
       }
-
       const delivery = await DeliveryCommandService.create(value);
       res.status(201).json({
         success: true,
@@ -32,7 +32,6 @@ class DeliveryCommandController {
 
   async update(req, res) {
     try {
-
       const { error, value } = updateDeliverySchema.validate(req.body);
       if (error) {
         return res.status(400).json({
@@ -40,20 +39,60 @@ class DeliveryCommandController {
           message: error.details[0].message
         });
       }
-      console.log('values', value);
-      const delivery = await DeliveryCommandService.update(req.params.id, value);
+      // Fetch the existing delivery details from the database
+      const existingDelivery = await Delivery.findById(req.params.id);
+      console.log('param is', req.params.id);
 
-      if (!delivery) {
+      console.log('details is', existingDelivery);
+      if (!existingDelivery) {
         return res.status(404).json({
           success: false,
           message: 'Delivery not found'
         });
       }
 
+      console.log('details is', existingDelivery);
+      // Check if required fields are available
+      if (!existingDelivery.driverContact || !existingDelivery.driverName || !existingDelivery.vehicleNo) {
+        return res.status(400).json({
+          success: false,
+          message: 'Cannot update delivery. Driver contact, driver name, and vehicle number must be provided.'
+        });
+      }
+      // Proceed with the update if all required fields exist
+      const updatedDelivery = await Delivery.findOneAndUpdate(
+        { _id: req.params.id }, // Find by ID
+        { $set: value },
+        { new: true }
+      );
+
+      // If status is "delivered", move to FinishProduct table
+      if (updatedDelivery.status === 'delivered') {
+        // Check if a FinishedProduct with the same orderId already exists
+        const existingFinishedProduct = await FinishedProduct.findOne({ order_id: existingDelivery.orderId });
+
+        if (!existingFinishedProduct) {
+          // If no existing FinishedProduct, create a new one
+          const newFinishProduct = new FinishedProduct({
+            order_id: existingDelivery.orderId, // Copy order_id
+            status: 'delivered',
+            createdAt: new Date(),
+            updatedAt: new Date()
+          });
+
+          await newFinishProduct.save(); // Save to FinishProduct table
+        } else {
+          console.log('Finished product already exists for this orderId');
+        }
+
+        // Update status to "done" instead of deleting
+        await Delivery.findByIdAndUpdate(req.params.id, { status: 'done' }, { new: true });
+      }
+
       res.json({
         success: true,
         message: 'Delivery updated successfully',
-        data: delivery
+        data: updatedDelivery
       });
     } catch (error) {
       logger.error('Error updating delivery:', error);
@@ -63,6 +102,7 @@ class DeliveryCommandController {
       });
     }
   }
+
 
   async delete(req, res) {
     try {

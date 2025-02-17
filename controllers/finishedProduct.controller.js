@@ -6,7 +6,7 @@ class FinishedProductController {
     try {
       const product = new FinishedProduct(req.body);
       await product.save();
-      
+
       res.status(201).json({
         success: true,
         data: product

@@ -1,32 +1,10 @@
 const mongoose = require('mongoose');
 
 const finishedProductSchema = new mongoose.Schema({
-  name: {
+  order_id: {
     type: String,
     required: true,
-    trim: true
-  },
-  category: {
-    type: String,
-    required: true
-  },
-  quantity: {
-    type: Number,
-    required: true,
-    min: 0
-  },
-  size: {
-    type: String,
-    required: true
-  },
-  color: {
-    type: String,
-    required: true
-  },
-  price: {
-    type: Number,
-    required: true,
-    min: 0
+    unique: true
   },
   status: {
     type: String

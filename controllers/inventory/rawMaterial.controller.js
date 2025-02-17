@@ -3,6 +3,7 @@ const logger = require("../../utils/logger");
 const SalesOrder = require("../../models/SalesOrder");
 const { default: mongoose } = require("mongoose");
 const SubCategory = require("../../models/schemas/subCategorySchema");
+const Subcategory = require("../../models/subcategory");
 
 class RawMaterialController {
   async create(req, res) {
@@ -277,6 +278,45 @@ class RawMaterialController {
       res.status(500).json({
         success: false,
         message: "Server error. Please try again later.",
+      });
+    }
+  }
+
+  async deleteSubCategory(req, res) {
+    try {
+      const { id } = req.params;
+      console.log("Subcategory ID received:", id);
+
+      // Validate ObjectId format
+      if (!mongoose.Types.ObjectId.isValid(id)) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid subcategory ID format.",
+        });
+      }
+
+      // Find and delete the subcategory
+      const subcategory = await Subcategory.findByIdAndDelete(id);
+
+      if (!subcategory) {
+        return res.status(404).json({
+          success: false,
+          message: "Subcategory not found or already deleted.",
+        });
+      }
+
+      res.json({
+        success: true,
+        message: "Subcategory deleted successfully.",
+        deletedSubcategory: subcategory,
+      });
+    } catch (error) {
+      console.error("Error deleting subcategory:", error); // Use console.error for better debugging
+      logger.error("Error deleting subcategory:", error);
+
+      res.status(500).json({
+        success: false,
+        message: "Internal server error. Please try again later.",
       });
     }
   }

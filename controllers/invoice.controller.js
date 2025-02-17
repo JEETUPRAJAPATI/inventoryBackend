@@ -6,7 +6,7 @@ class InvoiceController {
     try {
       const invoice = new Invoice(req.body);
       await invoice.save();
-      
+
       res.status(201).json({
         success: true,
         data: invoice

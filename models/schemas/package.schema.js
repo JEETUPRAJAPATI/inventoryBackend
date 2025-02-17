@@ -33,6 +33,12 @@ const packageSchema = new mongoose.Schema({
     required: true
   },
   package_details: [packageDetailsSchema],
+  status: {
+    type: String,
+    required: true,
+    enum: ['pending', 'delivered', 'cancelled'], // Valid statuses
+    default: 'pending' // Default status is 'pending'
+  },
   createdAt: {
     type: Date,
     default: Date.now
@@ -43,7 +49,7 @@ const packageSchema = new mongoose.Schema({
   }
 });
 
-packageSchema.pre('save', function(next) {
+packageSchema.pre('save', function (next) {
   this.updatedAt = new Date();
   next();
 });

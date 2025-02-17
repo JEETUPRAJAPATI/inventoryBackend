@@ -2,6 +2,7 @@ const Package = require('../../models/Package');
 const mongoose = require('mongoose');
 const logger = require('../../utils/logger');
 const SalesOrder = require('../../models/SalesOrder');
+const Delivery = require('../../models/Delivery');
 
 class PackageController {
   async create(req, res) {
@@ -79,16 +80,25 @@ class PackageController {
   }
 
 
-
   async getOrders(req, res) {
     try {
-      // Fetch all orders with the status 'pending'
-      const orders = await SalesOrder.find(
-        { status: 'pending' }
+      // Fetch all packages with the status 'pending'
+      const orders = await Package.find().select('status _id order_id'); // Assuming getall() is the method to fetch all packages
+
+      // Iterate over each package to fetch the associated order details
+      const ordersWithPackages = await Promise.all(
+        orders.map(async (packageItem) => {
+          const order = await SalesOrder.findOne({ orderId: packageItem.order_id }); // Fetch the corresponding order
+          return {
+            ...packageItem.toObject(),
+            order, // Add the order details to the package
+          };
+        })
       );
+
       res.json({
         success: true,
-        data: orders,
+        data: ordersWithPackages,
       });
     } catch (error) {
       logger.error('Error in getOrders controller:', error);
@@ -100,18 +110,88 @@ class PackageController {
   }
 
 
+  async updatePackageStatus(req, res) {
+    try {
+      const { id } = req.params;
+      const { status } = req.body; // The new status is sent in the request body
+
+      // Find the package using orderId and packageId
+      const packageToUpdate = await Package.findOne({
+        _id: id,
+      });
+
+      console.log('packageToUpdate', packageToUpdate);
+      if (!packageToUpdate) {
+        return res.status(404).json({ message: "Package not found" });
+      }
+
+      // Update the package's status
+      packageToUpdate.status = status;
+      await packageToUpdate.save();
+
+      // If the status is "delivered", check the Delivery table
+      if (status === "delivered") {
+        const existingDelivery = await Delivery.findOne({ orderId: packageToUpdate.order_id });
+
+        if (existingDelivery) {
+          // Update status if delivery entry already exists
+          existingDelivery.status = "pending";
+          await existingDelivery.save();
+        } else {
+          // Create new entry if it doesn't exist
+          await Delivery.create({
+            orderId: packageToUpdate.order_id,
+            status: "pending"
+          });
+        }
+      }
+      return res.status(200).json({ message: "Package status updated", package: packageToUpdate });
+    } catch (error) {
+      return res.status(500).json({ message: error.message });
+    }
+
+  }
+
 
   async getByOrderId(req, res) {
     try {
-      console.log('listing data', req.params.orderId);
-      const packages = await Package.find({ order_id: req.params.orderId });
-      console.log('package listing', packages);
+      console.log('Listing data for Order ID:', req.params.orderId);
+
+      // Find the sales order with the given orderId
+      const salesOrder = await SalesOrder.findOne({ orderId: req.params.orderId });
+
+      if (!salesOrder) {
+        return res.status(404).json({
+          success: false,
+          message: 'Sales order not found'
+        });
+      }
+
+      // Find the package corresponding to the order_id from the sales order
+      const packages = await Package.find({ order_id: salesOrder.orderId });
+
+      if (!packages || packages.length === 0) {
+        return res.status(404).json({
+          success: false,
+          message: 'No packages found for this order'
+        });
+      }
+
+      // Optionally, update package details (if needed)
+      await Package.updateMany(
+        { order_id: salesOrder.orderId },
+        { updatedAt: new Date() } // Updating the timestamp
+      );
+
+      console.log('Package listing:', packages);
       res.json({
         success: true,
-        data: packages
+        salesOrder: salesOrder,
+        packages: packages
       });
+
     } catch (error) {
-      logger.error('Error getting packages by order ID:', error);
+      console.error('Error getting packages by order ID:', error);
       res.status(500).json({
         success: false,
         message: error.message

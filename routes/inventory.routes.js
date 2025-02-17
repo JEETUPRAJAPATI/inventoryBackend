@@ -37,6 +37,10 @@ router.delete(
   "/raw-material/:id",
   RawMaterialController.deleteMaterial.bind(RawMaterialController)
 );
+router.delete(
+  "/raw-material/sub-category/:id",
+  RawMaterialController.deleteSubCategory.bind(RawMaterialController)
+);
 // Finished Product routes
 router.post(
   "/finished-product",
@@ -45,6 +49,10 @@ router.post(
 router.get(
   "/finished-products",
   FinishedProductController.list.bind(FinishedProductController)
+);
+router.get(
+  "/finished-products/full-detail/:id",
+  FinishedProductController.getFullDetail.bind(FinishedProductController)
 );
 router.put(
   "/finished-products/:id",
@@ -88,9 +96,14 @@ router.get(
   PackageController.getByOrderId.bind(PackageController)
 );
 router.put(
+  "/package/status/:id",
+  PackageController.updatePackageStatus.bind(PackageController)
+);
+router.put(
   "/package/:orderId/:packageId",
   PackageController.update.bind(PackageController)
 );
+
 router.post(
   "/package/order/addOrder/:orderId",
   PackageController.createPackage.bind(PackageController)
