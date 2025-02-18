@@ -9,6 +9,7 @@ class DCutProductionController {
       const productions = await ProductionService.getOpsertPrinting({
         status
       });
+      console.log('calling this api', productions);
       res.json({
         success: true,
         data: productions.data,
