@@ -267,7 +267,7 @@ class DcutBagmakingController {
       const updatedProductionManager = await ProductionManager.findOneAndUpdate(
         { order_id: orderId },
         {
-          $set: { "production_details.progress": "D-Cut Opsert" }
+          $set: { "production_details.progress": "D-Cut Opsert printing" }
         },
         { new: true }
       );
@@ -371,19 +371,28 @@ class DcutBagmakingController {
 
       console.log("✅ DcutBagmakingList Updated:", DcutBagmakingList);
 
+      console.log('---------Order id  is--------', orderId)
       // 2️⃣ Insert a record into the Invoice table
+      const lastInvoice = await Invoice.findOne().sort({ invoice_id: -1 });
+
+      // Get the numeric part of the last invoice ID (assuming format is "INV001", "INV002", etc.)
+      const lastInvoiceId = lastInvoice ? lastInvoice.invoice_id : "INV000";
+      const lastInvoiceNumber = parseInt(lastInvoiceId.replace("INV", "")) || 0;
+
+      // Generate a new invoice ID by incrementing the last number
+      const newInvoiceId = `INV${(lastInvoiceNumber + 1).toString().padStart(3, "0")}`;
       const invoiceRecord = await Invoice.create({
+        invoice_id: newInvoiceId,
         order_id: orderId,
         status: "Pending",
         type: type,
         createdAt: new Date(),
       });
-
       console.log("✅ Invoice Record Created:", invoiceRecord);
 
       // 4️⃣ Insert the removed record into the Reports table
       const ReportList = await Report.create({
-        order_id: id,
+        order_id: orderId,
         status: "completed",
         type: "d_cut_bag_making",
         createdAt: new Date(),
@@ -391,6 +400,22 @@ class DcutBagmakingController {
       });
       console.log("✅ Report Record Created:", Report);
 
+      const updatedProductionManager = await ProductionManager.findOneAndUpdate(
+        { order_id: orderId },
+        {
+          $set: { "production_details.progress": "Move to billing" }
+        },
+        { new: true }
+      );
+
+      if (!updatedProductionManager) {
+        return res.status(404).json({
+          success: false,
+          message: `No Production Manager record found for orderId: ${orderId}`
+        });
+      }
+
+      console.log("✅ ProductionManager Updated:", updatedProductionManager);
 
       return res.status(200).json({
         success: true,

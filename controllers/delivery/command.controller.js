@@ -4,6 +4,7 @@ const { createDeliverySchema, updateDeliverySchema } = require('../../validators
 const logger = require('../../utils/logger');
 const Delivery = require('../../models/Delivery');
 const FinishedProduct = require('../../models/FinishedProduct');
+const ProductionManager = require('../../models/ProductionManager');
 class DeliveryCommandController {
   async create(req, res) {
 
@@ -85,6 +86,22 @@ class DeliveryCommandController {
           console.log('Finished product already exists for this orderId');
         }
 
+        const updatedProductionManager = await ProductionManager.findOneAndUpdate(
+          { order_id: existingDelivery.orderId },
+          {
+            $set: { "production_details.progress": "Delivery Done" }
+          },
+          { new: true }
+        );
+
+        if (!updatedProductionManager) {
+          return res.status(404).json({
+            success: false,
+            message: `No Production Manager record found for orderId: ${orderId}`
+          });
+        }
+
+        console.log("✅ ProductionManager Updated:", updatedProductionManager);
         // Update status to "done" instead of deleting
         await Delivery.findByIdAndUpdate(req.params.id, { status: 'done' }, { new: true });
       }

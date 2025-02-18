@@ -10,7 +10,7 @@ class ProductionManagerController {
     try {
       const { status, agent, page, limit } = req.query;
       const type = "w_cut_box_bag"; // Ensure type matches
-      const orders = await SalesOrderService.getOrdersList({ status, agent, page, limit, type });
+      const orders = await SalesOrderService.getOrdersList({ status, agent, type });
       res.json({
         success: true,
         data: orders.data,

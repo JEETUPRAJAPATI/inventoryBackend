@@ -27,22 +27,11 @@ class PurchaseOrderController {
 
   async list(req, res) {
     try {
-      const { page = 1, limit = 10 } = req.query;
-      const skip = (page - 1) * limit;
-
-      const [orders, total] = await Promise.all([
-        PurchaseOrder.find().skip(skip).limit(limit),
-        PurchaseOrder.countDocuments()
-      ]);
+      const orders = await PurchaseOrder.find().sort({ createdAt: -1 });  // Sorting by creation date in descending order
 
       res.json({
         success: true,
-        data: orders,
-        pagination: {
-          currentPage: parseInt(page),
-          totalPages: Math.ceil(total / limit),
-          totalRecords: total
-        }
+        data: orders
       });
     } catch (error) {
       logger.error('Error listing purchase orders:', error);
@@ -52,6 +41,7 @@ class PurchaseOrderController {
       });
     }
   }
+
 
   async update(req, res) {
     try {

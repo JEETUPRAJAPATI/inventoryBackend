@@ -21,8 +21,7 @@ class SaleService {
       if (status && status !== 'all') {
         query.status = status;
       }
-      const sales = await Sale.find(query);
-
+      const sales = await Sale.find(query).sort({ _id: -1 });
       return {
         data: sales,
       };

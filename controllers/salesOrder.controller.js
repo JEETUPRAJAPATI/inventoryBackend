@@ -19,31 +19,39 @@ class SalesOrderController {
   }
   async getOrders(req, res) {
     try {
-      const { status, agent } = req.query;  // Remove pagination parameters
+      const { status, agent } = req.query;  // Extracting query parameters
       const orders = await SalesOrderService.getOrders({ status, agent });
+
+      // Sorting orders by createdAt in descending order
+      const sortedOrders = orders.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
       res.json({
         success: true,
-        data: orders
+        data: sortedOrders
       });
     } catch (error) {
       logger.error('Error in get orders controller:', error);
       res.status(500).json({ success: false, message: error.message });
     }
   }
+
   async recentOrders(req, res) {
     try {
       const orders = await SalesOrderService.recentOrders();
 
+      // Sorting orders by createdAt in descending order
+      const sortedOrders = orders.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
       res.json({
         success: true,
-        data: orders
+        data: sortedOrders
       });
     } catch (error) {
       logger.error('Error in recent orders controller:', error);
       res.status(500).json({ success: false, message: error.message });
     }
   }
+
 
 
   async getOrderById(req, res) {

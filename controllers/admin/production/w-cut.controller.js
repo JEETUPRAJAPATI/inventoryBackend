@@ -5,16 +5,14 @@ const logger = require('../../../utils/logger');
 class WCutProductionController {
   async getFlexoPrinting(req, res) {
     try {
-      const { status, date, page = 1, limit = 10 } = req.query;
-      const productions = await ProductionService.getFlexoPrinting({
-        status,
-        date
-      });
-      console.log('production data',productions);
+      const { status, date } = req.query;
+      const productions = await ProductionService.getFlexoPrinting({ status, date });
+
+      console.log('Production data:', productions);
+
       res.json({
         success: true,
-        data: productions.data,
-        pagination: productions.pagination
+        data: productions.data
       });
     } catch (error) {
       logger.error('Error fetching W-Cut Flexo Printing production:', error);
@@ -24,24 +22,19 @@ class WCutProductionController {
 
   async getBagMaking(req, res) {
     try {
-      const { status, operator_name, page = 1, limit = 10 } = req.query;
-      const productions = await ProductionService.getBagMaking({
-        status,
-        operator_name,
-        page,
-        limit
-      });
+      const { status, operator_name } = req.query;
+      const productions = await ProductionService.getBagMaking({ status, operator_name });
 
       res.json({
         success: true,
-        data: productions.data,
-        pagination: productions.pagination
+        data: productions.data
       });
     } catch (error) {
       logger.error('Error fetching W-Cut Bag Making production:', error);
       res.status(500).json({ success: false, message: error.message });
     }
   }
+
 }
 
 module.exports = new WCutProductionController();

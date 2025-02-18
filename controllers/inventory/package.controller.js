@@ -3,17 +3,63 @@ const mongoose = require('mongoose');
 const logger = require('../../utils/logger');
 const SalesOrder = require('../../models/SalesOrder');
 const Delivery = require('../../models/Delivery');
+const ProductionManager = require('../../models/ProductionManager');
 
 class PackageController {
   async create(req, res) {
     try {
-      const pkg = new Package(req.body);
-      await pkg.save();
+      const { order_id, package_details } = req.body;
 
-      res.status(201).json({
-        success: true,
-        data: pkg
-      });
+      // Validate required fields
+      if (!order_id || !Array.isArray(package_details) || package_details.length === 0) {
+        return res.status(400).json({
+          success: false,
+          message: "order_id and package_details (non-empty array) are required."
+        });
+      }
+
+      // Validate each package detail
+      for (const pkg of package_details) {
+        if (
+          typeof pkg.length !== "number" ||
+          typeof pkg.width !== "number" ||
+          typeof pkg.height !== "number" ||
+          typeof pkg.weight !== "number"
+        ) {
+          return res.status(400).json({
+            success: false,
+            message: "Each package detail must have numeric length, width, height, and weight."
+          });
+        }
+      }
+
+      // Find the existing package by order_id
+      let existingPackage = await Package.findOne({ order_id });
+
+      if (existingPackage) {
+        // Append new package_details to the existing package
+        existingPackage.package_details.push(...package_details);
+        existingPackage.updatedAt = new Date();
+        await existingPackage.save();
+
+        return res.status(200).json({
+          success: true,
+          data: existingPackage
+        });
+      } else {
+        // If no package exists for the given order_id, create a new package
+        const pkg = new Package({
+          order_id,
+          package_details
+        });
+
+        await pkg.save();
+
+        return res.status(201).json({
+          success: true,
+          data: pkg
+        });
+      }
     } catch (error) {
       logger.error('Error creating package:', error);
       res.status(400).json({
@@ -22,6 +68,7 @@ class PackageController {
       });
     }
   }
+
   async createPackage(req, res) {
     try {
       const { order_id, package_details } = req.body;
@@ -131,6 +178,24 @@ class PackageController {
 
       // If the status is "delivered", check the Delivery table
       if (status === "delivered") {
+
+        const updatedProductionManager = await ProductionManager.findOneAndUpdate(
+          { order_id: packageToUpdate.order_id },
+          {
+            $set: { "production_details.progress": "Delivery Pending" }
+          },
+          { new: true }
+        );
+
+        if (!updatedProductionManager) {
+          return res.status(404).json({
+            success: false,
+            message: `No Production Manager record found for orderId: ${orderId}`
+          });
+        }
+
+        console.log("✅ ProductionManager Updated:", updatedProductionManager);
+
         const existingDelivery = await Delivery.findOne({ orderId: packageToUpdate.order_id });
 
         if (existingDelivery) {

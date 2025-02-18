@@ -1,5 +1,6 @@
 const Delivery = require('../models/Delivery');
 const Opsert = require('../models/Opsert');
+const Package = require('../models/Package');
 const ProductionManager = require('../models/ProductionManager');
 const Report = require('../models/Report');
 const SalesOrder = require('../models/SalesOrder');
@@ -146,18 +147,26 @@ class OpsertController {
         return res.status(404).json({ message: 'Opsert record not found' });
       }
 
-      opsertRecord.status = 'delivery';
+      opsertRecord.status = 'delivered';
       await opsertRecord.save();
 
       // Step 2: Find and update `production_manager` table
-      const productionOrder = await ProductionManager.findOne({ where: { order_id: id } });
+      const updatedProductionManager = await ProductionManager.findOneAndUpdate(
+        { order_id: id },
+        {
+          $set: { "production_details.progress": "Move to Packaging" }
+        },
+        { new: true }
+      );
 
-      if (productionOrder) {
-        await productionOrder.update({
-          process: 'move to Delivery',
-          status: 'completed'
+      if (!updatedProductionManager) {
+        return res.status(404).json({
+          success: false,
+          message: `No Production Manager record found for orderId: ${orderId}`
         });
       }
+
+      console.log("✅ ProductionManager Updated:", updatedProductionManager);
 
       // 4️⃣ Insert the removed record into the Reports table
       const ReportList = await Report.create({
@@ -169,16 +178,16 @@ class OpsertController {
       });
       console.log("✅ Report Record Created:", Report);
 
-      // Step 3: Create entry in `delivery` table with status "pending"
-      await Delivery.create({
-        orderId: id,
+      // Step 3: Create entry in `packaging` table with status "pending"
+      await Package.create({
+        order_id: id,
         status: 'pending'
       });
 
-      return res.status(200).json({ message: 'Order moved to delivery successfully' });
+      return res.status(200).json({ message: 'Order moved to packaging successfully' });
     } catch (error) {
-      console.error('Error moving order to delivery:', error);
-      return res.status(500).json({ message: 'Failed to move order to delivery' });
+      console.error('Error moving order to packaging:', error);
+      return res.status(500).json({ message: 'Failed to move order to packaging' });
     }
   }
 

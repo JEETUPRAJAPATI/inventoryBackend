@@ -160,22 +160,11 @@ class RawMaterialController {
 
   async list(req, res) {
     try {
-      const { page = 1, limit = 10 } = req.query;
-      const skip = (page - 1) * limit;
-
-      const [materials, total] = await Promise.all([
-        RawMaterial.find().populate("subCategories").skip(skip).limit(limit),
-        RawMaterial.countDocuments(),
-      ]);
+      const materials = await RawMaterial.find().populate("subCategories");
 
       res.json({
         success: true,
         data: materials,
-        pagination: {
-          currentPage: parseInt(page),
-          totalPages: Math.ceil(total / limit),
-          totalRecords: total,
-        },
       });
     } catch (error) {
       logger.error("Error listing raw materials:", error);
@@ -185,6 +174,7 @@ class RawMaterialController {
       });
     }
   }
+
 
   async getSubcategories(req, res) {
     try {

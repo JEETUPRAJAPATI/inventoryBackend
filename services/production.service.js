@@ -62,7 +62,8 @@ class ProductionService {
             as: 'orderDetails'
           }
         },
-        { $unwind: '$orderDetails' } // Deconstructs the array to a single object
+        { $unwind: '$orderDetails' },
+        { $sort: { productionDate: -1 } }
       ]);
 
       return { data: flexoDocuments };
@@ -92,7 +93,8 @@ class ProductionService {
             as: 'orderDetails'
           }
         },
-        { $unwind: '$orderDetails' } // Deconstructs the array to a single object
+        { $unwind: '$orderDetails' },
+        { $sort: { productionDate: -1 } }
       ]);
 
       return { data: flexoDocuments };
@@ -119,7 +121,8 @@ class ProductionService {
             as: 'orderDetails'
           }
         },
-        { $unwind: '$orderDetails' } // Deconstructs the array to a single object
+        { $unwind: '$orderDetails' },
+        { $sort: { productionDate: -1 } }
       ]);
 
       return { data: flexoDocuments };
@@ -149,7 +152,8 @@ class ProductionService {
             as: 'orderDetails'
           }
         },
-        { $unwind: '$orderDetails' } // Deconstructs the array to a single object
+        { $unwind: '$orderDetails' },
+        { $sort: { productionDate: -1 } }
       ]);
 
       return { data: flexoDocuments };

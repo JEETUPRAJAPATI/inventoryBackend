@@ -8,10 +8,12 @@ const logger = require('../../utils/logger');
 const Delivery = require('../../models/Delivery');
 const Report = require('../../models/Report');
 const Invoice = require('../../models/Invoice');
+const Package = require('../../models/Package');
 
 class WcutBagmakingController {
   async list(req, res) {
     try {
+
       // Step 1: Get all SalesOrder records with bagType "w_cut_box_bag"
       const salesOrders = await SalesOrder.find({ "bagDetails.type": "w_cut_box_bag" })
         .select("orderId bagDetails customerName email mobileNumber address jobName fabricQuality quantity agent status createdAt updatedAt");
@@ -283,7 +285,7 @@ class WcutBagmakingController {
       const updatedFlexo = await Flexo.findOneAndUpdate(
         { order_id: orderId },
         {
-          $set: { status: "w_cut_bag_making" }  // Change to "w_cut_bagmaking"
+          $set: { status: "delivered" }  // Change to "w_cut_bagmaking"
         },
         { new: true }
       );
@@ -487,22 +489,23 @@ class WcutBagmakingController {
       await opsertRecord.save();
 
       // Step 2: Find and update `production_manager` table
-      const productionOrder = await ProductionManager.findOne({
-        order_id: id,
-      });
-      console.log('productionOrder', productionOrder);  // Make sure the record is found
+      const updatedProductionManager = await ProductionManager.findOneAndUpdate(
+        { order_id: id },
+        {
+          $set: { "production_details.progress": "Move to Packaging" }
+        },
+        { new: true }
+      );
 
-      if (productionOrder) {
-        await ProductionManager.updateOne(
-          { order_id: id },
-          {
-            $set: {
-              "production_details.progress": "move to Delivery",
-              status: "completed",
-            },
-          }
-        );
+      if (!updatedProductionManager) {
+        return res.status(404).json({
+          success: false,
+          message: `No Production Manager record found for orderId: ${orderId}`
+        });
       }
+
+      console.log("✅ ProductionManager Updated:", updatedProductionManager);
+
       const ReportList = await Report.create({
         order_id: id,
         status: "completed",
@@ -514,11 +517,10 @@ class WcutBagmakingController {
       console.log('Report Inserted:', ReportList);
 
       // Step 3: Create entry in `delivery` table with status "pending"
-      await Delivery.create({
-        orderId: id,
-        status: 'pending',
+      await Package.create({
+        order_id: id,
+        status: 'pending'
       });
-
       return res.status(200).json({ message: 'Order moved to delivery successfully' });
 
     } catch (error) {
@@ -534,7 +536,7 @@ class WcutBagmakingController {
     try {
       // 1️⃣ Find and remove the DcutBagmaking record
       const opsertRecord = await Flexo.findOne({
-        order_id: id,    // Use `id` directly for filtering
+        order_id: orderId,    // Use `id` directly for filtering
       });
 
       console.log('opsertRecord', opsertRecord);  // Make sure the record is found
@@ -546,27 +548,50 @@ class WcutBagmakingController {
       opsertRecord.status = 'delivered';  // Use "delivery", not "delivered"
       await opsertRecord.save();
 
-      console.log("✅ Flexo Record Removed:", FlexoRecord);
 
       // 2️⃣ Insert a record into the Invoice table
+      const lastInvoice = await Invoice.findOne().sort({ invoice_id: -1 });
+
+      // Get the numeric part of the last invoice ID (assuming format is "INV001", "INV002", etc.)
+      const lastInvoiceId = lastInvoice ? lastInvoice.invoice_id : "INV000";
+      const lastInvoiceNumber = parseInt(lastInvoiceId.replace("INV", "")) || 0;
+
+      // Generate a new invoice ID by incrementing the last number
+      const newInvoiceId = `INV${(lastInvoiceNumber + 1).toString().padStart(3, "0")}`;
       const invoiceRecord = await Invoice.create({
+        invoice_id: newInvoiceId,
         order_id: orderId,
         status: "Pending",
         type: type,
         createdAt: new Date(),
       });
-
       console.log("✅ Invoice Record Created:", invoiceRecord);
-
       // 4️⃣ Insert the removed record into the Reports table
       const ReportList = await Report.create({
-        order_id: id,
+        order_id: orderId,
         status: "completed",
         type: "w_cut_flexo",
         createdAt: new Date(),
         updatedAt: new Date()
       });
       console.log("✅ Report Record Created:", Report);
+
+      const updatedProductionManager = await ProductionManager.findOneAndUpdate(
+        { order_id: orderId },
+        {
+          $set: { "production_details.progress": "Move to billing" }
+        },
+        { new: true }
+      );
+
+      if (!updatedProductionManager) {
+        return res.status(404).json({
+          success: false,
+          message: `No Production Manager record found for orderId: ${orderId}`
+        });
+      }
+
+      console.log("✅ ProductionManager Updated:", updatedProductionManager);
 
       return res.status(200).json({
         success: true,

@@ -5,15 +5,14 @@ const logger = require('../../../utils/logger');
 class DCutProductionController {
   async getOpsertPrinting(req, res) {
     try {
-      const { status, date, page = 1, limit = 10 } = req.query;
-      const productions = await ProductionService.getOpsertPrinting({
-        status
-      });
-      console.log('calling this api', productions);
+      const { status } = req.query;
+      const productions = await ProductionService.getOpsertPrinting({ status });
+
+      console.log('Calling this API:', productions);
+
       res.json({
         success: true,
-        data: productions.data,
-        pagination: productions.pagination
+        data: productions.data
       });
     } catch (error) {
       logger.error('Error fetching D-Cut Opsert Printing production:', error);
@@ -23,21 +22,19 @@ class DCutProductionController {
 
   async getBagMaking(req, res) {
     try {
-      const { status, operator_name, page = 1, limit = 10 } = req.query;
-      const productions = await ProductionService.getDcutBagMaking({
-        status
-      });
+      const { status } = req.query;
+      const productions = await ProductionService.getDcutBagMaking({ status });
 
       res.json({
         success: true,
-        data: productions.data,
-        pagination: productions.pagination
+        data: productions.data
       });
     } catch (error) {
       logger.error('Error fetching D-Cut Bag Making production:', error);
       res.status(500).json({ success: false, message: error.message });
     }
   }
+
 }
 
 module.exports = new DCutProductionController();

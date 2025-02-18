@@ -16,7 +16,7 @@ class SalesOrderService {
         email: orderData.email,
         mobileNumber: orderData.mobileNumber,
         address: orderData.address,
-        orderPrice:orderData.orderPrice,
+        orderPrice: orderData.orderPrice,
         bagDetails: {
           type: orderData.bagDetails.type, // Correct field names
           handleColor: orderData.bagDetails.handleColor,
@@ -57,7 +57,7 @@ class SalesOrderService {
     try {
       // Fetch the 5 most recent orders, ordered by creation date
       const orders = await SalesOrder.find().sort({ createdAt: -1 }).limit(5);  // sorted by `createdAt` in descending order
-
+      console.log('allinf');
       return orders;
     } catch (error) {
       logger.error('Error fetching recent orders:', error);
@@ -66,33 +66,25 @@ class SalesOrderService {
   }
 
 
-  async getOrdersList({ status, agent, page = 1, limit = 10, type }) {
+  async getOrdersList({ status, agent, type }) {
     try {
       const query = {};
       if (status) query.status = status;
       if (agent) query.agent = agent;
       if (type) query["bagDetails.type"] = type; // Ensure the type matches
 
-      const skip = (page - 1) * limit;
-
-      const [orders, total] = await Promise.all([
-        SalesOrder.find(query).skip(skip).limit(limit),
-        SalesOrder.countDocuments(query)
-      ]);
+      // Fetch orders and apply descending order by createdAt
+      const orders = await SalesOrder.find(query).sort({ createdAt: -1 });  // Sort in descending order
 
       return {
-        data: orders,
-        pagination: {
-          currentPage: parseInt(page),
-          totalPages: Math.ceil(total / limit),
-          totalRecords: total
-        }
+        data: orders
       };
     } catch (error) {
       logger.error('Error fetching sales orders:', error);
       throw error;
     }
   }
+
 
   async getOrderById(orderId) {
     try {
