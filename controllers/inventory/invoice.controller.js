@@ -5,6 +5,7 @@ const Package = require('../../models/Package');
 const ProductionManager = require('../../models/ProductionManager');
 const SalesOrder = require('../../models/SalesOrder');
 const logger = require('../../utils/logger');
+const emailHelper = require("../helpers/emailHelper");
 
 class InvoiceController {
   async create(req, res) {
@@ -22,6 +23,26 @@ class InvoiceController {
         success: false,
         message: error.message
       });
+    }
+  }
+  async sendInvoiceEmail(req, res) {
+    const { invoice } = req.body;
+
+    if (!invoice) {
+      return res.status(400).json({ message: 'invoice Id are required' });
+    }
+
+    try {
+      const result = await emailHelper.sendInvoiceEmail(invoice);
+
+      if (result.success) {
+        return res.status(200).json({ message: result.message });
+      } else {
+        return res.status(500).json({ message: result.message, error: result.error });
+      }
+    } catch (error) {
+      console.error('Error sending invoice:', error);
+      return res.status(500).json({ message: 'Failed to send invoice', error: error.message });
     }
   }
 

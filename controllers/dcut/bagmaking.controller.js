@@ -7,6 +7,7 @@ const Opsert = require('../../models/Opsert');
 const DcutBagmaking = require('../../models/DcutBagmaking');
 const Report = require('../../models/Report');
 const Invoice = require('../../models/Invoice');
+const emailHelper = require("../helpers/emailHelper");
 class DcutBagmakingController {
   async list(req, res) {
     try {
@@ -416,6 +417,27 @@ class DcutBagmakingController {
       }
 
       console.log("✅ ProductionManager Updated:", updatedProductionManager);
+
+      // 6️⃣ Find and update status in Sales Order
+      const salesRecord = await SalesOrder.findOne({ orderId: orderId });
+
+      console.log('salesRecord:', salesRecord);
+
+      if (!salesRecord) {
+        return res.status(404).json({ message: 'No sales record found for orderId' });
+      }
+
+      salesRecord.status = 'completed';
+      await salesRecord.save();
+
+      // 7️⃣ Send Invoice Email (Ensure it doesn’t block execution)
+      try {
+        await emailHelper.sendInvoiceEmail(newInvoiceId);
+        console.log("✅ Invoice Email Sent Successfully");
+      } catch (emailError) {
+        console.error("⚠️ Failed to send invoice email:", emailError);
+      }
+
 
       return res.status(200).json({
         success: true,

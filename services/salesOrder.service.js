@@ -1,6 +1,7 @@
 const SalesOrder = require('../models/SalesOrder');
 const logger = require('../utils/logger');
 
+const emailHelper = require("../controllers/helpers/emailHelper");
 class SalesOrderService {
   // Helper function to generate unique order ID
   generateOrderId() {
@@ -32,7 +33,18 @@ class SalesOrderService {
         status: orderData.status || 'pending',
         orderId: uniqueOrderId
       });
-      return await order.save();
+      const savedOrder = await order.save();
+      console.log("✅ Sales Order Created:", savedOrder);
+
+      // 3️⃣ Send Sales Overview Email
+      try {
+        await emailHelper.sendSalesOverviewEmail(savedOrder);
+        console.log("✅ Sales Overview Email Sent Successfully");
+      } catch (emailError) {
+        console.error("⚠️ Failed to send sales overview email:", emailError);
+      }
+
+      return savedOrder;
     } catch (error) {
       console.error('Error creating sales order:', error);
       throw error;
@@ -57,7 +69,6 @@ class SalesOrderService {
     try {
       // Fetch the 5 most recent orders, ordered by creation date
       const orders = await SalesOrder.find().sort({ createdAt: -1 }).limit(5);  // sorted by `createdAt` in descending order
-      console.log('allinf');
       return orders;
     } catch (error) {
       logger.error('Error fetching recent orders:', error);
@@ -111,6 +122,14 @@ class SalesOrderService {
       if (!order) {
         throw new Error('Order not found');
       }
+      // 3️⃣ Send Sales Overview Email
+      try {
+        await emailHelper.sendSalesOverviewEmail(order);
+        console.log("✅ Sales Overview Email Sent Successfully");
+      } catch (emailError) {
+        console.error("⚠️ Failed to send sales overview email:", emailError);
+      }
+
       return order;
     } catch (error) {
       logger.error(`Error updating order ${orderId}:`, error);

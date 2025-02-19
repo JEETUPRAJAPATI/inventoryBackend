@@ -3,6 +3,8 @@ const ProductionManager = require('../../models/ProductionManager');
 const SalesOrder = require('../../models/SalesOrder');
 const Subcategory = require('../../models/subcategory');
 
+const emailHelper = require("../helpers/emailHelper");
+
 const Flexo = require('../../models/Flexo');
 const logger = require('../../utils/logger');
 const Delivery = require('../../models/Delivery');
@@ -536,16 +538,16 @@ class WcutBagmakingController {
     try {
       // 1️⃣ Find and remove the DcutBagmaking record
       const opsertRecord = await Flexo.findOne({
-        order_id: orderId,    // Use `id` directly for filtering
+        order_id: orderId,
       });
 
-      console.log('opsertRecord', opsertRecord);  // Make sure the record is found
+      console.log('opsertRecord', opsertRecord);
 
       if (!opsertRecord) {
         return res.status(404).json({ message: 'No W-Cut Bag Making record found for orderId' });
       }
 
-      opsertRecord.status = 'delivered';  // Use "delivery", not "delivered"
+      opsertRecord.status = 'delivered';
       await opsertRecord.save();
 
 
@@ -592,6 +594,27 @@ class WcutBagmakingController {
       }
 
       console.log("✅ ProductionManager Updated:", updatedProductionManager);
+
+
+      // 6️⃣ Find and update status in Sales Order
+      const salesRecord = await SalesOrder.findOne({ orderId: orderId });
+
+      console.log('salesRecord:', salesRecord);
+
+      if (!salesRecord) {
+        return res.status(404).json({ message: 'No sales record found for orderId' });
+      }
+
+      salesRecord.status = 'completed';
+      await salesRecord.save();
+
+      // 7️⃣ Send Invoice Email (Ensure it doesn’t block execution)
+      try {
+        await emailHelper.sendInvoiceEmail(newInvoiceId);
+        console.log("✅ Invoice Email Sent Successfully");
+      } catch (emailError) {
+        console.error("⚠️ Failed to send invoice email:", emailError);
+      }
 
       return res.status(200).json({
         success: true,

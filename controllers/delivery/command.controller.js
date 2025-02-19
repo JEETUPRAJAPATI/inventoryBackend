@@ -5,6 +5,7 @@ const logger = require('../../utils/logger');
 const Delivery = require('../../models/Delivery');
 const FinishedProduct = require('../../models/FinishedProduct');
 const ProductionManager = require('../../models/ProductionManager');
+const SalesOrder = require('../../models/SalesOrder');
 class DeliveryCommandController {
   async create(req, res) {
 
@@ -104,6 +105,18 @@ class DeliveryCommandController {
         console.log("✅ ProductionManager Updated:", updatedProductionManager);
         // Update status to "done" instead of deleting
         await Delivery.findByIdAndUpdate(req.params.id, { status: 'done' }, { new: true });
+
+        // 6️⃣ Find and update status in Sales Order
+        const salesRecord = await SalesOrder.findOne({ orderId: orderId });
+
+        console.log('salesRecord:', salesRecord);
+
+        if (!salesRecord) {
+          return res.status(404).json({ message: 'No sales record found for orderId' });
+        }
+
+        salesRecord.status = 'completed';
+        await salesRecord.save();
       }
 
       res.json({

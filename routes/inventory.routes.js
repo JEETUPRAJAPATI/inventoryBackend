@@ -82,6 +82,7 @@ router.delete(
 );
 
 // Invoice routes
+router.post("/invoices/send-invoice", InvoiceController.sendInvoiceEmail.bind(InvoiceController));
 router.post("/invoice", InvoiceController.create.bind(InvoiceController));
 router.get("/invoices", InvoiceController.list.bind(InvoiceController));
 
