@@ -6,6 +6,8 @@ const Delivery = require('../../models/Delivery');
 const FinishedProduct = require('../../models/FinishedProduct');
 const ProductionManager = require('../../models/ProductionManager');
 const SalesOrder = require('../../models/SalesOrder');
+
+const emailHelper = require("../helpers/emailHelper");
 class DeliveryCommandController {
   async create(req, res) {
 
@@ -90,7 +92,10 @@ class DeliveryCommandController {
         const updatedProductionManager = await ProductionManager.findOneAndUpdate(
           { order_id: existingDelivery.orderId },
           {
-            $set: { "production_details.progress": "Delivery Done" }
+            $set: {
+              "production_details.progress": "Delivery Done",
+              "status": "completed"
+            }
           },
           { new: true }
         );
@@ -107,7 +112,7 @@ class DeliveryCommandController {
         await Delivery.findByIdAndUpdate(req.params.id, { status: 'done' }, { new: true });
 
         // 6️⃣ Find and update status in Sales Order
-        const salesRecord = await SalesOrder.findOne({ orderId: orderId });
+        const salesRecord = await SalesOrder.findOne({ orderId: existingDelivery.orderId });
 
         console.log('salesRecord:', salesRecord);
 
@@ -117,6 +122,15 @@ class DeliveryCommandController {
 
         salesRecord.status = 'completed';
         await salesRecord.save();
+        // 7️⃣ Send Invoice Email (Ensure it doesn’t block execution)
+        try {
+          const getDelivery = await Delivery.findById(req.params.id);
+          await emailHelper.sendCompletedEmail(getDelivery, salesRecord);
+          console.log("✅ Email Sent Successfully");
+        } catch (emailError) {
+          console.error("⚠️ Failed to send email:", emailError);
+        }
+
       }
 
       res.json({

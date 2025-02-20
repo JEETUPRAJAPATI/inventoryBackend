@@ -2,6 +2,7 @@ const SalesOrder = require('../models/SalesOrder');
 const logger = require('../utils/logger');
 
 const emailHelper = require("../controllers/helpers/emailHelper");
+const ProductionManager = require('../models/ProductionManager');
 class SalesOrderService {
   // Helper function to generate unique order ID
   generateOrderId() {
@@ -89,6 +90,40 @@ class SalesOrderService {
 
       return {
         data: orders
+      };
+    } catch (error) {
+      logger.error('Error fetching sales orders:', error);
+      throw error;
+    }
+  }
+
+  async getOrdersListWithProductionManager({ status, agent, type }) {
+    try {
+      const query = {};
+      if (status) query.status = status;
+      if (agent) query.agent = agent;
+      if (type) query["bagDetails.type"] = type; // Ensure type matches
+
+      // Fetch orders and apply descending order by createdAt
+      const orders = await SalesOrder.find(query).sort({ createdAt: -1 });
+
+      // Extract orderIds from fetched orders
+      const orderIds = orders.map(order => order.orderId); // Assuming _id is the order ID
+
+      // Fetch production managers related to the orders
+      const productionManagers = await ProductionManager.find({
+        order_id: { $in: orderIds }
+      });
+      // Map orders and attach the matching production manager
+      const ordersWithManagers = orders.map(order => {
+        const productionManager = productionManagers.find(pm => pm.order_id.toString() === order.orderId.toString());
+        return {
+          ...order.toObject(), // Convert Mongoose document to plain object
+          productionManager: productionManager || null // Attach the production manager or set as null if not found
+        };
+      });
+      return {
+        data: ordersWithManagers
       };
     } catch (error) {
       logger.error('Error fetching sales orders:', error);

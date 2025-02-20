@@ -10,11 +10,12 @@ class ProductionManagerController {
     try {
       const { status, agent, page, limit } = req.query;
       const type = "w_cut_box_bag"; // Ensure type matches
-      const orders = await SalesOrderService.getOrdersList({ status, agent, type });
+      const orders = await SalesOrderService.getOrdersListWithProductionManager({ status, agent, type });
+
+      console.log('order data list is ', orders);
       res.json({
         success: true,
-        data: orders.data,
-        pagination: orders.pagination
+        data: orders.data
       });
     } catch (error) {
       logger.error('Error in get orders controller:', error);
@@ -110,13 +111,12 @@ class ProductionManagerController {
 
   async listDCutBagmaking(req, res) {
     try {
-      const { status, agent, page, limit } = req.query;
+      const { status, agent } = req.query;
       const type = "d_cut_loop_handle"; // Ensure type matches
-      const orders = await SalesOrderService.getOrdersList({ status, agent, page, limit, type });
+      const orders = await SalesOrderService.getOrdersListWithProductionManager({ status, agent, type });
       res.json({
         success: true,
-        data: orders.data,
-        pagination: orders.pagination
+        data: orders.data
       });
     } catch (error) {
       logger.error('Error in get orders controller:', error);

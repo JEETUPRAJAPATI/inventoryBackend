@@ -11,6 +11,8 @@ const upload = require('../middleware/upload');
 router.use(adminAuthMiddleware);
 
 // User management routes
+
+router.get('/dashboardOverview', AdminController.dashboardOverview.bind(AdminController));
 router.get('/users', AdminController.getUsers.bind(AdminController));
 router.get('/users/:id', AdminController.getUserById.bind(AdminController));
 router.post('/users',

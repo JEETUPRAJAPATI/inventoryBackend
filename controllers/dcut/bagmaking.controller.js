@@ -126,9 +126,13 @@ class DcutBagmakingController {
       const { gsm, color: fabricColor } = salesOrder.bagDetails;
       const { fabricQuality } = salesOrder;
       const { roll_size, quantity_kgs } = productionRecord.production_details;
-
+      console.log("Sales Order - Fabric Color:", fabricColor);
+      console.log("Sales Order - GSM:", gsm);
+      console.log("Sales Order - Fabric Quality:", fabricQuality);
+      console.log("Sales Order - rollSize:", roll_size);
       // Fetch corresponding subcategory based on roll_size and quantity_kgs
       const matchedSubcategory = await Subcategory.findOne({ rollSize: roll_size, gsm: gsm, fabricColor: fabricColor, quantity: quantity_kgs });
+
       if (!matchedSubcategory) {
         return res.status(404).json({
           success: false,
