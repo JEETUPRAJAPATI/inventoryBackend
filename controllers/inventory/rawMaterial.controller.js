@@ -4,6 +4,9 @@ const SalesOrder = require("../../models/SalesOrder");
 const { default: mongoose } = require("mongoose");
 const SubCategory = require("../../models/schemas/subCategorySchema");
 const Subcategory = require("../../models/subcategory");
+const Delivery = require("../../models/Delivery");
+const User = require("../../models/User");
+const ProductionManager = require("../../models/ProductionManager");
 
 class RawMaterialController {
   async create(req, res) {
@@ -90,22 +93,22 @@ class RawMaterialController {
   }
 
   async createSubCategory(req, res) {
+    console.log('req.body', req.body);
+
     try {
-      const { fabricColor, rollSize, gsm, fabricQuality, quantity, category } =
-        req.body;
+      // Destructure request body
+      let { fabricColor, rollSize, gsm, fabricQuality, quantity, category } = req.body;
+
+      // Convert rollSize, gsm, and quantity to numbers
+      rollSize = Number(rollSize);
+      gsm = Number(gsm);
+      quantity = Number(quantity);
 
       // Validate required fields
-      if (
-        !fabricColor ||
-        !rollSize ||
-        !gsm ||
-        !fabricQuality ||
-        !quantity ||
-        !category
-      ) {
+      if (!fabricColor || isNaN(rollSize) || isNaN(gsm) || !fabricQuality || isNaN(quantity) || !category) {
         return res.status(400).json({
           success: false,
-          message: "All fields are required.",
+          message: "All fields are required and must be valid numbers.",
         });
       }
 
@@ -117,7 +120,7 @@ class RawMaterialController {
         });
       }
 
-      // Check if the parent category (RawMaterial) exists
+      // Fetch RawMaterial data
       const rawMaterial = await RawMaterial.findById(category);
       if (!rawMaterial) {
         return res.status(404).json({
@@ -126,6 +129,18 @@ class RawMaterialController {
         });
       }
 
+      console.log('RawMaterial before update:', rawMaterial);
+
+      // Check if stock is sufficient before subtraction
+      if (
+        rawMaterial.roll_size < rollSize ||
+        rawMaterial.quantity_kgs < quantity
+      ) {
+        return res.status(404).json({
+          success: false,
+          message: "Insufficient stock in inventory. Unable to add subcategory due to low raw material availability.",
+        });
+      }
       // Create the subcategory
       const subCategory = await SubCategory.create({
         fabricColor,
@@ -136,21 +151,22 @@ class RawMaterialController {
         category,
       });
 
-      // Push the subcategory ID into the parent RawMaterial's subCategories array
-      await RawMaterial.findByIdAndUpdate(
-        category,
-        { $push: { subCategories: subCategory._id } },
-        { new: true }
-      );
+      // Subtract values from RawMaterial
+      rawMaterial.roll_size -= rollSize;
+      rawMaterial.quantity_kgs -= quantity;
+
+      // Save updated RawMaterial
+      await rawMaterial.save();
 
       res.status(201).json({
         success: true,
-        message: "Subcategory added successfully and linked to category.",
+        message: "Subcategory added successfully and inventory updated.",
         data: subCategory,
+        updatedRawMaterial: rawMaterial,
       });
-    } catch (error) {
-      logger.error("Error adding subcategory:", error);
 
+    } catch (error) {
+      console.error("Error adding subcategory:", error);
       res.status(500).json({
         success: false,
         message: "Server error. Please try again later.",
@@ -158,9 +174,10 @@ class RawMaterialController {
     }
   }
 
+
   async list(req, res) {
     try {
-      const materials = await RawMaterial.find().populate("subCategories");
+      const materials = await RawMaterial.find().sort({ _id: -1 }).populate("subCategories");
 
       res.json({
         success: true,
@@ -307,6 +324,65 @@ class RawMaterialController {
       res.status(500).json({
         success: false,
         message: "Internal server error. Please try again later.",
+      });
+    }
+  }
+
+  async recentActivities(req, res) {
+    try {
+      const latestSalesOrder = await SalesOrder.findOne().sort({ createdAt: -1 });
+      const latestDelivery = await Delivery.findOne().sort({ createdAt: -1 });
+      const latestUser = await User.findOne().sort({ createdAt: -1 });
+      const latestProductionTask = await ProductionManager.findOne().sort({ createdAt: -1 });
+
+      const activities = [];
+
+      if (latestSalesOrder) {
+        activities.push({
+          id: latestSalesOrder._id,
+          type: "order",
+          text: `New order #${latestSalesOrder.orderId} received`,
+          time: latestSalesOrder.createdAt,
+        });
+      }
+
+      if (latestDelivery) {
+        activities.push({
+          id: latestDelivery._id,
+          type: "delivery",
+          text: `Order #${latestDelivery.orderId} has been delivered`,
+          time: latestDelivery.createdAt,
+        });
+      }
+
+      if (latestUser) {
+        activities.push({
+          id: latestUser._id,
+          type: "user",
+          text: `New user ${latestUser.fullName} registered`,
+          time: latestUser.createdAt,
+        });
+      }
+
+      if (latestProductionTask) {
+        activities.push({
+          id: latestProductionTask._id,
+          type: "task",
+          text: `Production task ${latestProductionTask.order_id} completed`,
+          time: latestProductionTask.createdAt,
+        });
+      }
+
+      return res.status(200).json({
+        success: true,
+        data: activities.sort((a, b) => new Date(b.time) - new Date(a.time)), // Sort by latest timestamp
+      });
+
+    } catch (error) {
+      console.error("Error fetching recent activities:", error);
+      return res.status(500).json({
+        success: false,
+        message: "Error fetching recent activities",
       });
     }
   }

@@ -130,7 +130,7 @@ class PackageController {
   async getOrders(req, res) {
     try {
       // Fetch all packages with the status 'pending'
-      const orders = await Package.find().select('status _id order_id'); // Assuming getall() is the method to fetch all packages
+      const orders = await Package.find().sort({ _id: -1 }).select('status _id order_id'); // Assuming getall() is the method to fetch all packages
 
       // Iterate over each package to fetch the associated order details
       const ordersWithPackages = await Promise.all(

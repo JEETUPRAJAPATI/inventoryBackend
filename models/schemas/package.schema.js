@@ -36,7 +36,7 @@ const packageSchema = new mongoose.Schema({
   status: {
     type: String,
     required: true,
-    enum: ['pending', 'delivered', 'cancelled'], // Valid statuses
+    enum: ['pending', 'delivery', 'cancelled'], // Valid statuses
     default: 'pending' // Default status is 'pending'
   },
   createdAt: {

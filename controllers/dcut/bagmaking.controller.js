@@ -110,8 +110,6 @@ class DcutBagmakingController {
         });
       }
       console.log('productionRecord---------', productionRecord);
-
-
       // Fetch sales order details
       const salesOrder = await SalesOrder.findOne({ orderId: orderId });
       if (!salesOrder) {

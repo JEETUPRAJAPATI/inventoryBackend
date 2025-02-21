@@ -11,6 +11,10 @@ const DeliveryController = require("../controllers/inventory/delivery.controller
 // Apply authentication middleware to all routes
 router.use(authMiddleware);
 
+router.get(
+  "/recent-activities",
+  RawMaterialController.recentActivities.bind(RawMaterialController)
+);
 // Raw Material routes
 router.post(
   "/raw-material",

@@ -51,7 +51,7 @@ class InvoiceController {
       console.log('Fetching finished products...');
 
       // Fetch all finished products
-      const products = await Invoice.find();
+      const products = await Invoice.find().sort({ _id: -1 });
       console.log(`Found ${products.length} finished products.`, products);
 
       if (products.length === 0) {
