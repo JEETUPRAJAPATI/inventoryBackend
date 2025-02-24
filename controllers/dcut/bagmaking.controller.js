@@ -100,7 +100,8 @@ class DcutBagmakingController {
   async verifyOrder(req, res) {
     try {
       const { orderId } = req.params;
-
+      const { rollSize, gsm, fabricColor, quantity } = req.body;
+      console.log(rollSize, gsm, fabricColor, quantity);
       // Fetch production details from ProductionManager
       const productionRecord = await ProductionManager.findOne({ order_id: orderId });
       if (!productionRecord) {
@@ -110,6 +111,7 @@ class DcutBagmakingController {
         });
       }
       console.log('productionRecord---------', productionRecord);
+
       // Fetch sales order details
       const salesOrder = await SalesOrder.findOne({ orderId: orderId });
       if (!salesOrder) {
@@ -121,20 +123,22 @@ class DcutBagmakingController {
       console.log('salesOrder---------', salesOrder);
 
       // Extract correct fields
-      const { gsm, color: fabricColor } = salesOrder.bagDetails;
+      const { color: FabricColor } = salesOrder.bagDetails;
       const { fabricQuality } = salesOrder;
-      const { roll_size, quantity_kgs } = productionRecord.production_details;
-      console.log("Sales Order - Fabric Color:", fabricColor);
-      console.log("Sales Order - GSM:", gsm);
+      const { quantity_kgs } = productionRecord.production_details;
+      console.log("Sales Order - Fabric Color:", FabricColor);
+      console.log("Sales Order - Gsm:", gsm);
       console.log("Sales Order - Fabric Quality:", fabricQuality);
-      console.log("Sales Order - rollSize:", roll_size);
+      console.log("Sales Order - rollSize:", rollSize);
+      console.log("Sales Order - quantity_kgs:", quantity_kgs);
+
       // Fetch corresponding subcategory based on roll_size and quantity_kgs
-      const matchedSubcategory = await Subcategory.findOne({ rollSize: roll_size, gsm: gsm, fabricColor: fabricColor, quantity: quantity_kgs });
+      const matchedSubcategory = await Subcategory.findOne({ rollSize: rollSize, gsm: gsm, fabricColor: fabricColor, quantity: quantity });
 
       if (!matchedSubcategory) {
         return res.status(404).json({
           success: false,
-          message: 'No matching subcategory found for the given production details.'
+          message: 'No matching detail found for the given production details.'
         });
       }
       console.log('matchedSubcategory---------', matchedSubcategory);
@@ -155,8 +159,10 @@ class DcutBagmakingController {
       // Validate sales order details with subcategory
       if (
         matchedSubcategory.gsm === gsm &&
-        matchedSubcategory.fabricColor === fabricColor &&
-        matchedSubcategory.fabricQuality === fabricQuality
+        matchedSubcategory.fabricColor === FabricColor &&
+        matchedSubcategory.fabricQuality === fabricQuality &&
+        matchedSubcategory.rollSize === rollSize &&
+        matchedSubcategory.quantity === quantity_kgs
       ) {
 
         const existingRecord = await DcutBagmaking.findOne({ order_id: orderId });

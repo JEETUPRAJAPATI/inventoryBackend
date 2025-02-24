@@ -9,6 +9,7 @@ const DCutProductionController = require('../../controllers/admin/production/d-c
 router.use(authMiddleware);
 
 // W-Cut Bagmaking routes
+
 router.get('/wcut/bagmaking', ProductionManagerController.listWCutBagmaking.bind(ProductionManagerController));
 router.put('/update/:order_id', ProductionManagerController.updateData.bind(ProductionManagerController));
 router.get('/get/:order_id', ProductionManagerController.getData.bind(ProductionManagerController));
@@ -25,6 +26,13 @@ router.get('/w-cut/bag-making', WCutProductionController.getBagMaking.bind(WCutP
 router.get('/d-cut/opsert', DCutProductionController.getOpsertPrinting.bind(DCutProductionController));
 router.get('/d-cut/bag-making', DCutProductionController.getBagMaking.bind(DCutProductionController));
 
+
+// production manager counter
+router.get('/w-cut/flexo-counter', WCutProductionController.getFlexoCounter.bind(WCutProductionController));
+router.get('/w-cut/bag-making-counter', WCutProductionController.getWCutBagMakingCounter.bind(WCutProductionController));
+
+router.get('/d-cut/opsert-counter', DCutProductionController.getDCutOpsertCounter.bind(DCutProductionController));
+router.get('/d-cut/bag-making-counter', DCutProductionController.getDCutBagMakingCounter.bind(DCutProductionController));
 
 
 module.exports = router;

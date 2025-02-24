@@ -163,6 +163,89 @@ class ProductionService {
     }
   }
 
+
+  // production counter
+
+
+  async getFlexoCounter({ status, date }) {
+    try {
+      const match = {};
+      if (status && status !== 'all') match.status = status;
+      if (date) {
+        const formattedDate = new Date(date);
+        match.productionDate = formattedDate;
+      }
+
+      const flexoDocuments = await Flexo.aggregate([
+        { $match: match },
+        { $sort: { productionDate: -1 } }
+      ]);
+
+      return { data: flexoDocuments };
+    } catch (error) {
+      console.error('Error fetching Flexo Printing production:', error);
+      throw error;
+    }
+  }
+
+
+
+
+  async getWCutBagMakingCounter({ status, operator_name }) {
+    try {
+      const match = {};
+      if (status && status !== 'all') match.status = status;
+
+      const WcutBagmakingCounter = await WcutBagmaking.aggregate([
+        { $match: match },
+        { $sort: { productionDate: -1 } }
+      ]);
+
+      return { data: WcutBagmakingCounter };
+    } catch (error) {
+      console.error('Error fetching Flexo Printing production:', error);
+      throw error;
+    }
+  }
+
+  async getDCutOpsertCounter({ status }) {
+    try {
+      const match = {};
+      if (status && status !== 'all') match.status = status;
+
+      const opsertCounter = await Opsert.aggregate([
+        { $match: match },
+        { $sort: { productionDate: -1 } }
+      ]);
+
+      return { data: opsertCounter };
+    } catch (error) {
+      console.error('Error fetching Flexo Printing production:', error);
+      throw error;
+    }
+  }
+
+
+
+
+  async getDCutBagMakingCounter({ status }) {
+    try {
+      const match = {};
+      if (status && status !== 'all') match.status = status;
+
+      const dcutRecord = await DcutBagmaking.aggregate([
+        { $match: match },
+        { $sort: { productionDate: -1 } }
+      ]);
+
+      return { data: dcutRecord };
+    } catch (error) {
+      console.error('Error fetching Flexo Printing production:', error);
+      throw error;
+    }
+  }
+
+
 }
 
 module.exports = new ProductionService();
