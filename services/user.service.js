@@ -1,6 +1,8 @@
 const User = require('../models/User');
 const logger = require('../utils/logger');
 const { REGISTRATION_TYPES, OPERATOR_TYPES, BAG_TYPES } = require('../config/constants');
+
+const AuthUtils = require('../utils/auth.utils');
 class UserService {
   async getUsers({ search, status }) {
     try {
@@ -62,13 +64,20 @@ class UserService {
     }
   }
   async updateUser(userId, userData) {
-    console.log('userId', userId);
-    console.log('userData', userData);
+    console.log('userId:', userId);
+    console.log('userData:', userData);
+
     try {
+      // Extract password if provided
+      if (userData.password) {
+        userData.password = await AuthUtils.hashPassword(userData.password);
+      }
+
       const user = await User.findByIdAndUpdate(
         userId,
-        { $set: userData }
-      ).select('-password');
+        { $set: userData },
+        { new: true } // Ensure updated user is returned
+      ).select('-password'); // Exclude password from the response
 
       if (!user) {
         throw new Error('User not found');

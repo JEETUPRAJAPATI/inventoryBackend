@@ -29,13 +29,11 @@ class AuthService {
 
     // Hash password
     const hashedPassword = await AuthUtils.hashPassword(password);
-
     // Create new user
     const user = new User({
       ...otherData,
       password: hashedPassword
     });
-
     return await user.save();
   }
 
