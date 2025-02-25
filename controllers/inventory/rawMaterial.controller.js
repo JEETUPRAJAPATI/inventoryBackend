@@ -133,7 +133,6 @@ class RawMaterialController {
 
       // Check if stock is sufficient before subtraction
       if (
-        rawMaterial.roll_size < rollSize ||
         rawMaterial.quantity_kgs < quantity
       ) {
         return res.status(404).json({
@@ -152,7 +151,6 @@ class RawMaterialController {
       });
 
       // Subtract values from RawMaterial
-      rawMaterial.roll_size -= rollSize;
       rawMaterial.quantity_kgs -= quantity;
 
       // Save updated RawMaterial

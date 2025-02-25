@@ -101,7 +101,7 @@ class OpsertController {
 
   static async updateOrderStatus(req, res) {
     const { id } = req.params; // Order ID from route params
-    const { status, remarks } = req.body; // Status and remarks from request body
+    const { status, unitToUpdate, remarks } = req.body; // Status and remarks from request body
 
     console.log('id', id);
     console.log(status, remarks);
@@ -118,8 +118,10 @@ class OpsertController {
       // Update the status and remarks for the found record
       opsertRecord.status = status;
       opsertRecord.remarks = remarks || opsertRecord.remarks;  // Keep old remarks if not provided
-
+      opsertRecord.unit_number = unitToUpdate || opsertRecord.unitToUpdate;
       await opsertRecord.save();  // Save the updated record
+
+
 
       return res.status(200).json({
         success: true,

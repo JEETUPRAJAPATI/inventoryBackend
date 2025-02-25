@@ -7,6 +7,10 @@ const opsertSchema = new mongoose.Schema({
     trim: true,
     unique: true, // Ensures order_id is unique
   },
+  unit_number: {
+    type: String,
+    required: true,
+  },
   status: {
     type: String,
     enum: ["pending", "in_progress", "completed", "delivered"],

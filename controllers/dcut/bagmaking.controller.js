@@ -215,7 +215,7 @@ class DcutBagmakingController {
 
       // Extract orderId from URL parameters and status, remarks from the request body
       const { orderId } = req.params;
-      const { status, remarks } = req.body;
+      const { status, remarks, unitToUpdate } = req.body;
 
       // Log extracted values
       console.log('orderId:', orderId);
@@ -235,7 +235,9 @@ class DcutBagmakingController {
       const dcutBagMaking = await DcutBagmaking.findOneAndUpdate(
         { order_id: orderId },   // Find record by orderId
         {
-          status: status,       // Update status
+          status: status,
+          remarks: remarks,
+          unit_number: unitToUpdate
         },
         { new: true, runValidators: true } // Return the updated document
       );

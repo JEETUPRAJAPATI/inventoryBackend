@@ -4,6 +4,11 @@ const logger = require('../../utils/logger');
 const SalesOrder = require('../../models/SalesOrder');
 const Delivery = require('../../models/Delivery');
 const ProductionManager = require('../../models/ProductionManager');
+const Flexo = require('../../models/Flexo');
+const WcutBagmaking = require('../../models/WcutBagmaking');
+const DcutBagmaking = require('../../models/DcutBagmaking');
+const Opsert = require('../../models/Opsert');
+
 
 class PackageController {
   async create(req, res) {
@@ -126,19 +131,17 @@ class PackageController {
     }
   }
 
-
   async getOrders(req, res) {
     try {
-      // Fetch all packages with the status 'pending'
-      const orders = await Package.find().sort({ _id: -1 }).select('status _id order_id'); // Assuming getall() is the method to fetch all packages
-
-      // Iterate over each package to fetch the associated order details
+      const orders = await Package.find().sort({ _id: -1 }).select('status _id order_id package_details');
       const ordersWithPackages = await Promise.all(
         orders.map(async (packageItem) => {
           const order = await SalesOrder.findOne({ orderId: packageItem.order_id }); // Fetch the corresponding order
+          const totalWeight = packageItem.package_details?.reduce((sum, pkg) => sum + pkg.weight, 0) || 0;
           return {
             ...packageItem.toObject(),
-            order, // Add the order details to the package
+            order,
+            totalWeight,
           };
         })
       );
@@ -155,6 +158,7 @@ class PackageController {
       });
     }
   }
+
 
 
   async updatePackageStatus(req, res) {
@@ -177,7 +181,7 @@ class PackageController {
       await packageToUpdate.save();
 
       // If the status is "delivered", check the Delivery table
-      if (status === "delivered") {
+      if (status === "delivery") {
 
         const updatedProductionManager = await ProductionManager.findOneAndUpdate(
           { order_id: packageToUpdate.order_id },
@@ -232,7 +236,7 @@ class PackageController {
         });
       }
 
-      // Find the package corresponding to the order_id from the sales order
+      // Find all packages for the given order
       const packages = await Package.find({ order_id: salesOrder.orderId });
 
       if (!packages || packages.length === 0) {
@@ -242,17 +246,55 @@ class PackageController {
         });
       }
 
-      // Optionally, update package details (if needed)
+      // Update package timestamps (optional)
       await Package.updateMany(
         { order_id: salesOrder.orderId },
         { updatedAt: new Date() } // Updating the timestamp
       );
 
-      console.log('Package listing:', packages);
+      // Calculate total weight
+      let totalWeight = 0;
+
+      // Fetch unit numbers based on bag type
+      let flexoUnitNumber = "N/A";
+      let wcutUnitNumber = "N/A";
+      let dcutUnitNumber = "N/A";
+      let opsertUnitNumber = "N/A";
+
+      if (salesOrder?.bagDetails?.type === "w_cut_box_bag") {
+        const flexoData = await Flexo.findOne({ order_id: salesOrder.orderId });
+        const wcutData = await WcutBagmaking.findOne({ order_id: salesOrder.orderId });
+
+        flexoUnitNumber = flexoData?.unit_number || "N/A";
+        wcutUnitNumber = wcutData?.unit_number || "N/A";
+
+      } else if (salesOrder?.bagDetails?.type === "d_cut_loop_handle") {
+        const dcutData = await DcutBagmaking.findOne({ order_id: salesOrder.orderId });
+        const opsertData = await Opsert.findOne({ order_id: salesOrder.orderId });
+
+        dcutUnitNumber = dcutData?.unit_number || "N/A";
+        opsertUnitNumber = opsertData?.unit_number || "N/A";
+      }
+
+      // Process packages and calculate total weight
+      const ordersWithPackages = packages.map(packageItem => {
+        const packageWeight = packageItem.package_details?.reduce((sum, pkg) => sum + pkg.weight, 0) || 0;
+        totalWeight += packageWeight;
+        return packageItem.toObject();
+      });
+
+      console.log('Package listing:', ordersWithPackages);
       res.json({
         success: true,
-        salesOrder: salesOrder,
-        packages: packages
+        salesOrder,
+        packages: ordersWithPackages,
+        totalWeight,
+        unitNumbers: {
+          flexo: flexoUnitNumber,
+          wcut: wcutUnitNumber,
+          dcut: dcutUnitNumber,
+          opsert: opsertUnitNumber
+        }
       });
 
     } catch (error) {

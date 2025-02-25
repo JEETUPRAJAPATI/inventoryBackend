@@ -6,6 +6,10 @@ const dcutBagmakingSchema = new mongoose.Schema({
     required: true,
     trim: true
   },
+  unit_number: {
+    type: String,
+    required: true,
+  },
   status: {
     type: String,
     enum: ['pending', 'in_progress', 'completed', 'billing', 'opsert', 'delivered'],

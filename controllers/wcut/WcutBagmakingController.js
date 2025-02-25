@@ -104,7 +104,7 @@ class WcutBagmakingController {
   async verifyOrder(req, res) {
     try {
       const { orderId } = req.params;
-
+      const { rollSize, gsm, fabricColor, quantity } = req.body;
       // Fetch production details from ProductionManager
       const productionRecord = await ProductionManager.findOne({ order_id: orderId });
       if (!productionRecord) {
@@ -126,16 +126,22 @@ class WcutBagmakingController {
       console.log('salesOrder---------', salesOrder);
 
       // Extract correct fields
-      const { gsm, color: fabricColor } = salesOrder.bagDetails;
+      const { color: FabricColor } = salesOrder.bagDetails;
       const { fabricQuality } = salesOrder;
-      const { roll_size, quantity_kgs } = productionRecord.production_details;
+      const { quantity_kgs } = productionRecord.production_details;
+      console.log("Sales Order - Fabric Color:", FabricColor);
+      console.log("Sales Order - Gsm:", gsm);
+      console.log("Sales Order - Fabric Quality:", fabricQuality);
+      console.log("Sales Order - rollSize:", rollSize);
+      console.log("Sales Order - quantity_kgs:", quantity_kgs);
 
       // Fetch corresponding subcategory based on roll_size and quantity_kgs
-      const matchedSubcategory = await Subcategory.findOne({ rollSize: roll_size, gsm: gsm, fabricColor: fabricColor, quantity: quantity_kgs });
+      const matchedSubcategory = await Subcategory.findOne({ rollSize: rollSize, gsm: gsm, fabricColor: fabricColor, quantity: quantity });
+
       if (!matchedSubcategory) {
         return res.status(404).json({
           success: false,
-          message: 'No matching subcategory found for the given production details.'
+          message: 'No matching detail found for the given production details.'
         });
       }
       console.log('matchedSubcategory---------', matchedSubcategory);
@@ -156,8 +162,10 @@ class WcutBagmakingController {
       // Validate sales order details with subcategory
       if (
         matchedSubcategory.gsm === gsm &&
-        matchedSubcategory.fabricColor === fabricColor &&
-        matchedSubcategory.fabricQuality === fabricQuality
+        matchedSubcategory.fabricColor === FabricColor &&
+        matchedSubcategory.fabricQuality === fabricQuality &&
+        matchedSubcategory.rollSize === rollSize &&
+        matchedSubcategory.quantity === quantity_kgs
       ) {
 
         const existingRecord = await ProductionManager.findOne({ order_id: orderId });
@@ -209,12 +217,13 @@ class WcutBagmakingController {
 
       // Extract the orderId from the URL parameters
       const { orderId } = req.params;  // OrderId from URL parameters
-      const { status, remarks } = req.body; // status and remarks from the body of the request
+      const { status, remarks, unitToUpdate } = req.body; // status and remarks from the body of the request
 
       // Log the extracted orderId, status, and remarks
       console.log('orderId:', orderId);
       console.log('status:', status);
       console.log('remarks:', remarks);
+      console.log('unitToUpdate:', unitToUpdate);
 
       // Step 2: Validate the status
       const validStatuses = ["pending", "in_progress", "completed"];
@@ -229,7 +238,8 @@ class WcutBagmakingController {
         { order_id: orderId },        // Find by the orderId
         {
           status: status,             // Update the status field
-          remarks: remarks || ''      // Update the remarks (if any)
+          remarks: remarks || '',
+          unit_number: unitToUpdate
         },
         { new: true, runValidators: true }  // Return the updated document
       );
@@ -442,7 +452,7 @@ class WcutBagmakingController {
 
   async updateOrderStatus(req, res) {
     const { id } = req.params; // Order ID from route params
-    const { status, remarks } = req.body; // Status and remarks from request body
+    const { status, unitToUpdate, remarks } = req.body; // Status and remarks from request body
 
     console.log('id', id);
     console.log(status, remarks);
@@ -458,7 +468,8 @@ class WcutBagmakingController {
 
       // Update the status and remarks for the found record
       opsertRecord.status = status;
-      opsertRecord.remarks = remarks || opsertRecord.remarks;  // Keep old remarks if not provided
+      opsertRecord.remarks = remarks || opsertRecord.remarks;
+      opsertRecord.unit_number = unitToUpdate || opsertRecord.unitToUpdate;
 
       await opsertRecord.save();  // Save the updated record
 

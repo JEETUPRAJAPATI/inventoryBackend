@@ -46,7 +46,6 @@ class FlexoController {
     try {
       const { id } = req.params;
       const updateData = req.body;
-
       // Validate status transition
       if (updateData.status) {
         const currentEntry = await Flexo.findById(id);
