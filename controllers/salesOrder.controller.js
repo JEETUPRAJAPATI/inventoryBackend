@@ -5,6 +5,7 @@ const logger = require('../utils/logger');
 class SalesOrderController {
   async createOrder(req, res) {
     try {
+
       const { error, value } = salesOrderSchema.validate(req.body);
       if (error) {
         return res.status(400).json({ success: false, message: error.details[0].message });
