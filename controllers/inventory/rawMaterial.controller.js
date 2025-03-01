@@ -207,6 +207,7 @@ class RawMaterialController {
       // Fetch Subcategories linked to this Category
       const subCategories = await SubCategory.find({
         category: categoryId,
+        status: 'active'
       }).populate("category");
 
       res.status(200).json({

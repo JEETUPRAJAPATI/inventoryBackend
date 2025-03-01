@@ -8,7 +8,7 @@ const flexoSchema = new mongoose.Schema({
   },
   unit_number: {
     type: String,
-    required: true,
+    required: false,
   },
   status: {
     type: String,
@@ -20,6 +20,13 @@ const flexoSchema = new mongoose.Schema({
     trim: true,
     required: false
   },
+  subcategoryIds: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Subcategory', // Reference to the Subcategory model
+      required: true
+    }
+  ],
   createdAt: {
     type: Date,
     default: Date.now

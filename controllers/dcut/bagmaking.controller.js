@@ -13,7 +13,7 @@ class DcutBagmakingController {
     try {
       // Step 1: Get all SalesOrder records with bagType "d_cut_loop_handle"
       const salesOrders = await SalesOrder.find({ "bagDetails.type": "d_cut_loop_handle" })
-        .select("orderId bagDetails customerName email mobileNumber address jobName fabricQuality quantity agent status createdAt updatedAt");
+        .select("orderId bagDetails customerName email mobileNumber address jobName fabricQuality quantity agent status createdAt updatedAt").sort({ createdAt: -1 });
 
       console.log('salesOrderList----', salesOrders);
 
@@ -100,59 +100,71 @@ class DcutBagmakingController {
   async verifyOrder(req, res) {
     try {
       const { orderId } = req.params;
-      const { rollSize, gsm, fabricColor, quantity } = req.body;
-      console.log(rollSize, gsm, fabricColor, quantity);
+      const { materialId, scanData } = req.body;
+      const { rollSize, gsm, fabricColor, quantity, id } = scanData;
+
+      console.log(rollSize, gsm, fabricColor, quantity, materialId);
+
+      // return false;
       // Fetch production details from ProductionManager
       const productionRecord = await ProductionManager.findOne({ order_id: orderId });
-      if (!productionRecord) {
-        return res.status(404).json({
-          success: false,
-          message: 'Production record not found for the given order ID.'
-        });
-      }
+      if (!productionRecord) return res.status(404).json({ success: false, message: 'Production record not found.' });
       console.log('productionRecord---------', productionRecord);
 
       // Fetch sales order details
       const salesOrder = await SalesOrder.findOne({ orderId: orderId });
-      if (!salesOrder) {
-        return res.status(404).json({
-          success: false,
-          message: 'Sales order not found for the given order ID.'
-        });
-      }
+      if (!salesOrder) return res.status(404).json({ success: false, message: 'Sales order not found.' });
       console.log('salesOrder---------', salesOrder);
 
       // Extract correct fields
       const { color: FabricColor } = salesOrder.bagDetails;
       const { fabricQuality } = salesOrder;
-      const { quantity_kgs } = productionRecord.production_details;
+      const { quantity_kgs, remaining_quantity } = productionRecord.production_details;
       console.log("Sales Order - Fabric Color:", FabricColor);
       console.log("Sales Order - Gsm:", gsm);
       console.log("Sales Order - Fabric Quality:", fabricQuality);
       console.log("Sales Order - rollSize:", rollSize);
       console.log("Sales Order - quantity_kgs:", quantity_kgs);
 
-      // Fetch corresponding subcategory based on roll_size and quantity_kgs
-      const matchedSubcategory = await Subcategory.findOne({ rollSize: rollSize, gsm: gsm, fabricColor: fabricColor, quantity: quantity });
+
+
+      // Fetch subcategory IDs from Flexo
+      const existingRecord = await DcutBagmaking.findOne({ order_id: orderId });
+      if (!existingRecord || !existingRecord.subcategoryIds || existingRecord.subcategoryIds.length === 0) {
+        return res.status(404).json({ success: false, message: "No subcategories found for this order." });
+      }
+
+      const subcategoryIds = existingRecord.subcategoryIds;
+
+      // 3️⃣ Find the exact subcategory that matches all scanned properties
+      const matchedSubcategory = await Subcategory.findOne({
+        _id: id,  // Must match the scanned subcategory ID
+        rollSize: rollSize,
+        gsm: gsm,
+        fabricColor: fabricColor,
+        quantity: quantity,
+        status: "active"
+      });
+
+      console.log('matchedSubcategory:', matchedSubcategory);
+      console.log('qr code id :', id);
 
       if (!matchedSubcategory) {
-        return res.status(404).json({
-          success: false,
-          message: 'No matching detail found for the given production details.'
-        });
+        return res.status(400).json({ success: false, message: "Invalid QR code. No matching subcategory found." });
       }
-      console.log('matchedSubcategory---------', matchedSubcategory);
-
-
+      // 3️⃣ Check if the scanned subcategory ID exists inside this order's subcategories
+      if (!existingRecord.subcategoryIds.includes(id)) {
+        return res.status(400).json({ success: false, message: "Invalid QR code. Subcategory does not belong to this order." });
+      }
+      if (id !== materialId) {
+        return res.status(400).json({ success: false, message: "Invalid QR code. Subcategory ID does not match material ID." });
+      }
 
       console.log('-----------------------------------------------');
-
       console.log("Matched Subcategory - GSM:", matchedSubcategory.gsm);
       console.log("Sales Order - GSM:", gsm);
-
       console.log("Matched Subcategory - Fabric Color:", matchedSubcategory.fabricColor);
       console.log("Sales Order - Fabric Color:", fabricColor);
-
       console.log("Matched Subcategory - Fabric Quality:", matchedSubcategory.fabricQuality);
       console.log("Sales Order - Fabric Quality:", fabricQuality);
 
@@ -161,29 +173,45 @@ class DcutBagmakingController {
         matchedSubcategory.gsm === gsm &&
         matchedSubcategory.fabricColor === FabricColor &&
         matchedSubcategory.fabricQuality === fabricQuality &&
-        matchedSubcategory.rollSize === rollSize &&
-        matchedSubcategory.quantity === quantity_kgs
+        matchedSubcategory.rollSize === rollSize
       ) {
 
-        const existingRecord = await DcutBagmaking.findOne({ order_id: orderId });
-        console.log("Existing DcutBagmaking Record:", existingRecord);
+        console.log("Updating Subcategory ID:", matchedSubcategory._id);
 
-        if (!existingRecord) {
-          console.log("No existing record in DcutBagmaking, creating a new one...");
+        const material = await Subcategory.findOne({ _id: materialId });
+        if (!material) return res.status(400).json({ success: false, message: "Invalid material ID." });
+
+        // Find active subcategories
+        const activeSubcategories = await Subcategory.find({ _id: { $in: subcategoryIds }, status: "active" });
+        if (!activeSubcategories.length) return res.status(400).json({ success: false, message: "No active subcategories available." });
+
+
+        const remainingQuantity = remaining_quantity - matchedSubcategory.quantity;
+        // Update subcategory and production records
+        if (matchedSubcategory.quantity === material.quantity && activeSubcategories.length > 1) {
+          await Subcategory.findByIdAndUpdate(matchedSubcategory._id, { status: "inactive" });
+          await ProductionManager.findOneAndUpdate(
+            { order_id: orderId },
+            { "production_details.remaining_quantity": remainingQuantity },
+            { new: true }
+          );
+        } else if (activeSubcategories.length === 1) {
+          if (remainingQuantity === matchedSubcategory.quantity) {
+            await Subcategory.findByIdAndUpdate(matchedSubcategory._id, { status: "inactive", quantity: 0 });
+          } else if (remainingQuantity !== 0) {
+            await Subcategory.findByIdAndUpdate(matchedSubcategory._id, { quantity: Math.abs(remainingQuantity) });
+          }
+          await ProductionManager.findOneAndUpdate(
+            { order_id: orderId },
+            { "production_details.remaining_quantity": 0 },
+            { new: true }
+          );
+          await DcutBagmaking.updateOne(
+            { order_id: orderId },
+            { status: "in_progress" },
+            { upsert: true }
+          );
         }
-
-        // ✅ Update Flexo table status instead of ProductionManager
-        const updateResult = await DcutBagmaking.updateOne(
-          { order_id: orderId },
-          {
-            $set: {
-              status: "in_progress"
-            }
-          },
-          { upsert: true }
-        );
-
-        console.log("Update Result:", updateResult);
         return res.json({
           success: true,
           message: 'Order verification successful.',
@@ -670,6 +698,81 @@ class DcutBagmakingController {
       });
     }
   }
+  async listMaterials(req, res) {
+    try {
+      const { orderId } = req.params;
+      console.log('orderid', orderId);
+      // Fetch existing production record
+      const existingRecord = await DcutBagmaking.findOne({ order_id: orderId });
+      console.log('existingRecord', existingRecord);
+      if (!existingRecord) {
+        return res.status(404).json({ success: false, message: "Records not found" });
+      }
+      // Extract subcategory IDs from Flexo table
+      const subcategoryIds = existingRecord.subcategoryIds || [];
+      if (subcategoryIds.length === 0) {
+        return res.status(404).json({ success: false, message: "No Row Material found for this order" });
+      }
+      // Fetch sales record
+      // Fetch matching subcategory records
+      const subcategoryMatches = await Subcategory.find({
+        _id: { $in: subcategoryIds },  // Filter by the subcategory IDs from Flexo
+        status: 'active'
+      });
+
+      console.log('subcategoryMatches', subcategoryMatches);
+      if (!subcategoryMatches || subcategoryMatches.length === 0) {
+        return res.json({
+          success: false,
+          totalQuantity: 0,
+          requiredMaterials: [],
+          message: "No active subcategories found"
+        });
+      }
+
+      const productionRecord = await ProductionManager.findOne({ order_id: orderId });
+      if (!productionRecord) {
+        return res.status(404).json({
+          success: false,
+          message: 'Production record not found for the given order ID.'
+        });
+      }
+      const { remaining_quantity } = productionRecord.production_details;
+      // Calculate total quantity from subcategories
+      // let totalQuantity = subcategoryMatches.reduce((sum, subcategory) => sum + (subcategory.quantity || 0), 0);
+
+      let totalQuantity = Number.isFinite(remaining_quantity) ? Math.abs(remaining_quantity) : 0;
+
+      const requiredMaterials = subcategoryMatches.map(subcategory => {
+        const subcategoryPlain = JSON.parse(JSON.stringify(subcategory));
+        return {
+          _id: subcategoryPlain._id,
+          fabricColor: subcategoryPlain.fabricColor,
+          rollSize: subcategoryPlain.rollSize,
+          gsm: subcategoryPlain.gsm,
+          fabricQuality: subcategoryPlain.fabricQuality,
+          quantity: subcategoryPlain.quantity,
+          category: subcategoryPlain.category,
+          status: subcategoryPlain.status || 'unknown'
+        };
+      });
+      console.log('requiredMaterials', requiredMaterials);
+      // return false;
+      const firstSubcategory = subcategoryMatches[0];
+      res.json({
+        success: true,
+        totalQuantity,
+        rollSize: firstSubcategory.rollSize,
+        quantityRolls: subcategoryMatches.length,
+        requiredMaterials
+      });
+    } catch (error) {
+      logger.error('Error fetching materials:', error);
+      res.status(500).json({ success: false, message: error.message });
+    }
+  }
+
+
 }
 
 module.exports = new DcutBagmakingController();

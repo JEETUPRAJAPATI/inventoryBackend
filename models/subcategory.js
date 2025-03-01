@@ -21,12 +21,16 @@ const SubcategorySchema = new mongoose.Schema(
         quantity: {
             type: Number,
             required: true,
-            min: 1, // Ensure quantity is at least 1
         },
         category: {
             type: mongoose.Schema.Types.ObjectId,
             ref: 'Category', // Assuming categories are stored in a Category model
             required: true,
+        },
+        status: {
+            type: String,
+            enum: ['active', 'inactive'],
+            default: 'active'
         },
     },
     { timestamps: true } // Adds createdAt and updatedAt

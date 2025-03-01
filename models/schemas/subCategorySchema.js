@@ -25,12 +25,16 @@ const SubCategorySchema = new mongoose.Schema(
     quantity: {
       type: Number,
       required: [true, "Quantity is required"],
-      min: [1, "Quantity must be at least 1"],
     },
     category: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "RawMaterial",
       required: true,
+    },
+    status: {
+      type: String,
+      enum: ['active', 'inactive'],
+      default: 'active'
     },
   },
   { timestamps: true }

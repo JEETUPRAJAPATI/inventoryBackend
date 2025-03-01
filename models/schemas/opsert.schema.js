@@ -9,7 +9,7 @@ const opsertSchema = new mongoose.Schema({
   },
   unit_number: {
     type: String,
-    required: true,
+    required: false,
   },
   status: {
     type: String,

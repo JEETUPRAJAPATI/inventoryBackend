@@ -14,7 +14,7 @@ class OpsertController {
     try {
       // Step 1: Get all SalesOrder records with bagType "d_cut_loop_handle"
       const salesOrders = await SalesOrder.find({ "bagDetails.type": "d_cut_loop_handle" })
-        .select("orderId bagDetails customerName email mobileNumber address jobName fabricQuality quantity agent status createdAt updatedAt");
+        .select("orderId bagDetails customerName email mobileNumber address jobName fabricQuality quantity agent status createdAt updatedAt").sort({ createdAt: -1 });
 
       console.log('salesOrderList----', salesOrders);
 

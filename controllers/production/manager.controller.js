@@ -4,6 +4,7 @@ const SalesOrderService = require('../../services/salesOrder.service');
 const SalesOrder = require('../../models/SalesOrder');
 const DcutBagmaking = require('../../models/DcutBagmaking');
 const Flexo = require('../../models/Flexo');
+const Subcategory = require('../../models/subcategory');
 class ProductionManagerController {
   // W-Cut Bagmaking Methods
   async listWCutBagmaking(req, res) {
@@ -24,72 +25,137 @@ class ProductionManagerController {
   }
 
   async updateData(req, res) {
-    console.log('request data--------', req.body);
+    console.log('Request data:', req.body);
     try {
       const { order_id } = req.params;
-      const { type } = req.body;
+      const { type, roll_size, quantity_kgs, quantity_rolls } = req.body;
 
-      // Check if the entry exists for ProductionManager with the given order_id
       let entry = await ProductionManager.findOne({ order_id });
 
-      // If the entry exists and status is 'in_progress', do not update
+      // Prevent updates if status is 'in_progress'
       if (entry && entry.status === 'in_progress') {
         return res.status(400).json({
           success: false,
           message: 'Cannot update. The entry is in progress.',
         });
       }
-
+      // Prepare update data
       const updateData = {
-        production_details: req.body,
+        production_details: {
+          ...req.body,
+          remaining_quantity: Number(req.body.quantity_kgs) || 0,
+        },
         updatedAt: new Date(),
       };
 
+      console.log('updateData', updateData)
+      // Fetch the related sales order
+      const salesRecord = await SalesOrder.findOne({ orderId: order_id });
+      if (!salesRecord) {
+        return res.status(404).json({ success: false, message: "Sales record not found" });
+      }
+
+      const { fabricQuality } = salesRecord;
+      const { color: fabricColor, gsm } = salesRecord.bagDetails;
+
+
+      console.log("-----------------------------------------------");
+      console.log("Matched Subcategory - fabricQuality:", fabricQuality);
+      console.log("Matched Subcategory - Fabric Color:", fabricColor);
+      console.log("Matched Subcategory - Fabric gsm:", gsm);
+      console.log("Matched Subcategory - rollSize:", roll_size);
+      // Fetch matching subcategories (active raw materials)
+      let subcategoryMatches = await Subcategory.find({
+        fabricColor,
+        rollSize: parseInt(roll_size),
+        gsm,
+        fabricQuality,
+        status: 'active',
+      });
+
+      if (!subcategoryMatches.length) {
+        return res.status(404).json({ success: false, message: "No raw material available for this order." });
+      }
+
+      console.log('Matching subcategories:', subcategoryMatches);
+
+      // Sort subcategory matches in descending order (to use largest rolls first)
+      subcategoryMatches.sort((a, b) => b.quantity - a.quantity);
+
+      // Select required rolls dynamically until quantity_kgs and quantity_rolls are met
+      let selectedMaterials = [];
+      let totalSelectedKg = 0;
+      let totalRollsSelected = 0;
+
+      for (const roll of subcategoryMatches) {
+        if (totalRollsSelected < quantity_rolls && totalSelectedKg < quantity_kgs) {
+          selectedMaterials.push(roll);
+          totalSelectedKg += roll.quantity;
+          totalRollsSelected++;
+        }
+        if (totalRollsSelected >= quantity_rolls || totalSelectedKg >= quantity_kgs) break;
+      }
+
+      console.log(' totalRollsSelected:', totalRollsSelected);
+      console.log(' quantity_rolls:', quantity_rolls);
+      // If not enough rolls are available
+      if (totalRollsSelected < quantity_rolls) {
+        return res.status(400).json({
+          success: false,
+          message: `Insufficient rolls available. You requested ${quantity_rolls} rolls, but only ${totalRollsSelected} were found. Please adjust your order or check available stock.`,
+        });
+      }
+
+      // If selected rolls do not meet required quantity
+      if (totalSelectedKg < quantity_kgs) {
+        return res.status(400).json({
+          success: false,
+          message: `Insufficient material weight. You need ${quantity_kgs} kg, but only ${totalSelectedKg} kg is available. Consider selecting different sizes or reducing the required weight.`,
+        });
+      }
+      const subcategoryIds = selectedMaterials.map(item => item._id);
+      console.log('subcategoryIds', subcategoryIds);
+      // Update or create ProductionManager entry
       if (entry) {
-        // Update the existing ProductionManager entry
         entry = await ProductionManager.findOneAndUpdate(
           { order_id },
           { $set: updateData },
           { new: true, runValidators: true }
         );
       } else {
-        // Create a new ProductionManager entry
         entry = new ProductionManager({
           order_id,
-          production_details: req.body,
+          production_details: updateData.production_details,
           createdAt: new Date(),
           updatedAt: new Date(),
         });
-
         await entry.save();
       }
 
-      // **Move Flexo and DcutBagmaking inserts here to prevent duplicates**
+      // Insert into Flexo or DcutBagmaking if needed
       if (type === 'WCut') {
-        // Check if a Flexo entry already exists
         const flexoExists = await Flexo.findOne({ order_id });
         if (!flexoExists) {
-          const flexoxEntry = new Flexo({
+          await new Flexo({
             order_id,
             status: 'pending',
             details: req.body,
+            subcategoryIds,
             createdAt: new Date(),
             updatedAt: new Date(),
-          });
-          await flexoxEntry.save();
+          }).save();
         }
       } else if (type === 'DCut') {
-        // Check if a DcutBagmaking entry already exists
         const dcutExists = await DcutBagmaking.findOne({ order_id });
         if (!dcutExists) {
-          const dcutEntry = new DcutBagmaking({
+          await new DcutBagmaking({
             order_id,
             status: 'pending',
             details: req.body,
+            subcategoryIds,
             createdAt: new Date(),
             updatedAt: new Date(),
-          });
-          await dcutEntry.save();
+          }).save();
         }
       }
 
@@ -97,6 +163,7 @@ class ProductionManagerController {
         success: true,
         data: entry,
       });
+
     } catch (error) {
       console.error('Error updating or creating entry:', error);
       res.status(400).json({
@@ -105,7 +172,6 @@ class ProductionManagerController {
       });
     }
   }
-
 
 
 

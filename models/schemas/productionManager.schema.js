@@ -30,7 +30,12 @@ const productionDetailsSchema = new mongoose.Schema({
   progress: {
     type: String,
     default: "Pending"  // Default value for progress
-  }
+  },
+  remaining_quantity: {
+    type: Number,
+    required: true,
+    min: 0
+  },
 });
 
 // Schema for the production manager (productionManagerSchema)

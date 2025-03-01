@@ -9,6 +9,7 @@ router.use(authMiddleware);
 
 // D-Cut Bag Making routes
 
+router.get('/bagmaking/:orderId/listMaterials', DcutBagmakingController.listMaterials.bind(DcutBagmakingController));
 router.get('/bagmaking/production/records', DcutBagmakingController.getRecordsByType.bind(DcutBagmakingController));
 router.get('/opsert/production/records', DcutBagmakingController.getRecordsBagmakingByType.bind(DcutBagmakingController));
 

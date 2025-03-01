@@ -1,8 +1,13 @@
+const DcutBagmaking = require('../../models/DcutBagmaking');
 const Delivery = require('../../models/Delivery');
 const FinishedProduct = require('../../models/FinishedProduct');
+const Flexo = require('../../models/Flexo');
+const Opsert = require('../../models/Opsert');
 const Package = require('../../models/Package');
 const ProductionManager = require('../../models/ProductionManager');
 const SalesOrder = require('../../models/SalesOrder');
+const Subcategory = require('../../models/subcategory');
+const WcutBagmaking = require('../../models/WcutBagmaking');
 const logger = require('../../utils/logger');
 
 const { updateFinishedProductSchema } = require('../../validators/product.validator');
@@ -101,14 +106,57 @@ class FinishedProductController {
       const delivery = await Delivery.findOne({ orderId: product.order_id });
       console.log('Found delivery details:', delivery);
 
+
+      let productionDetails = null;
+
+      // Fetch unit numbers based on bag type
+      let flexoUnitNumber = "N/A";
+      let wcutUnitNumber = "N/A";
+      let dcutUnitNumber = "N/A";
+      let opsertUnitNumber = "N/A";
+
+      if (productionManager?.production_details?.type === 'WCut') {
+        productionDetails = await Flexo.findOne({ order_id: product.order_id }).populate({
+          path: 'subcategoryIds',
+          model: 'Subcategory',
+        });
+
+        const wcutData = await WcutBagmaking.findOne({ order_id: product.order_id });
+
+        flexoUnitNumber = productionDetails?.unit_number || "N/A";
+        wcutUnitNumber = wcutData?.unit_number || "N/A";
+
+      } else if (productionManager?.production_details?.type === 'DCut') {
+        productionDetails = await DcutBagmaking.findOne({ order_id: product.order_id }).populate({
+          path: 'subcategoryIds',
+          model: 'Subcategory',
+        });
+
+        const dcutData = await DcutBagmaking.findOne({ order_id: product.order_id });
+        const opsertData = await Opsert.findOne({ order_id: product.order_id });
+
+        dcutUnitNumber = dcutData?.unit_number || "N/A";
+        opsertUnitNumber = opsertData?.unit_number || "N/A";
+      }
+
+      console.log("Production Details with Populated Subcategory:", productionDetails);
+
       // Combine all data and return it in the response
       const productWithDetails = {
         ...product.toObject(),  // Convert the Mongoose product object to a plain JavaScript object
         orderDetails: order || {},  // Attach the order details, or an empty object if not found
         productionManagerDetails: productionManager || {},
         packageDetails: packageData || {},
-        deliveryDetails: delivery || {}
+        deliveryDetails: delivery || {},
+        productionDetails: productionDetails || {},
+        unitNumbers: {
+          flexo: flexoUnitNumber,
+          wcut: wcutUnitNumber,
+          dcut: dcutUnitNumber,
+          opsert: opsertUnitNumber
+        }
       };
+
 
       // Send the response with all combined details
       res.json({
@@ -135,7 +183,8 @@ class FinishedProductController {
       console.log('Fetching finished products...');
 
       // Fetch all finished products
-      const products = await FinishedProduct.find();
+      const products = await FinishedProduct.find().sort({ createdAt: -1 });
+
       console.log(`Found ${products.length} finished products.`, products);
 
       if (products.length === 0) {
