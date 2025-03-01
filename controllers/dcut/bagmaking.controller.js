@@ -722,11 +722,11 @@ class DcutBagmakingController {
 
       console.log('subcategoryMatches', subcategoryMatches);
       if (!subcategoryMatches || subcategoryMatches.length === 0) {
-        return res.json({
+        return res.status(404).json({
           success: false,
           totalQuantity: 0,
           requiredMaterials: [],
-          message: "No active subcategories found"
+          message: "No Row Material found for this order"
         });
       }
 

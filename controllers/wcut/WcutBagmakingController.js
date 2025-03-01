@@ -388,7 +388,7 @@ class WcutBagmakingController {
     try {
       // Step 1: Get all SalesOrder records with bagType "d_cut_loop_handle"
       const salesOrders = await SalesOrder.find({ "bagDetails.type": "w_cut_box_bag" })
-        .select("orderId bagDetails customerName email mobileNumber address jobName fabricQuality quantity agent status createdAt updatedAt");
+        .select("orderId bagDetails customerName email mobileNumber address jobName fabricQuality quantity agent status createdAt updatedAt").sort({ createdAt: -1 });
 
       console.log('salesOrderList----', salesOrders);
 
@@ -919,7 +919,7 @@ class WcutBagmakingController {
       // Extract subcategory IDs from Flexo table
       const subcategoryIds = existingRecord.subcategoryIds || [];
       if (subcategoryIds.length === 0) {
-        return res.status(404).json({ success: false, message: "No subcategories found for this order" });
+        return res.status(404).json({ success: false, message: "No Row Material found for this order" });
       }
       // Fetch sales record
       // Fetch matching subcategory records
@@ -930,11 +930,11 @@ class WcutBagmakingController {
 
       console.log('subcategoryMatches', subcategoryMatches);
       if (!subcategoryMatches || subcategoryMatches.length === 0) {
-        return res.json({
+        return res.status(404).json({
           success: false,
           totalQuantity: 0,
           requiredMaterials: [],
-          message: "No active subcategories found"
+          message: "No Row Material found for this order"
         });
       }
       const productionRecord = await ProductionManager.findOne({ order_id: orderId });
