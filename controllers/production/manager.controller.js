@@ -73,9 +73,9 @@ class ProductionManagerController {
         status: 'active',
       });
 
-      if (!subcategoryMatches.length) {
-        return res.status(404).json({ success: false, message: "No raw material available for this order." });
-      }
+      // if (!subcategoryMatches.length) {
+      //   return res.status(404).json({ success: false, message: "No raw material available for this order." });
+      // }
 
       console.log('Matching subcategories:', subcategoryMatches);
 
