@@ -35,6 +35,7 @@ class DeliveryCommandController {
   }
 
   async update(req, res) {
+
     try {
       const { error, value } = updateDeliverySchema.validate(req.body);
       if (error) {
@@ -109,7 +110,7 @@ class DeliveryCommandController {
 
         console.log("✅ ProductionManager Updated:", updatedProductionManager);
         // Update status to "done" instead of deleting
-        await Delivery.findByIdAndUpdate(req.params.id, { status: 'done' }, { new: true });
+        await Delivery.findByIdAndUpdate(req.params.id, { status: 'delivered' }, { new: true });
 
         // 6️⃣ Find and update status in Sales Order
         const salesRecord = await SalesOrder.findOne({ orderId: existingDelivery.orderId });

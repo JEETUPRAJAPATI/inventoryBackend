@@ -197,9 +197,9 @@ class DcutBagmakingController {
           );
         } else if (activeSubcategories.length === 1) {
           if (remainingQuantity === matchedSubcategory.quantity) {
-            await Subcategory.findByIdAndUpdate(matchedSubcategory._id, { status: "inactive", quantity: 0 });
+            await Subcategory.findByIdAndUpdate(material._id, { status: "inactive", quantity: 0 });
           } else if (remainingQuantity !== 0) {
-            await Subcategory.findByIdAndUpdate(matchedSubcategory._id, { quantity: Math.abs(remainingQuantity) });
+            await Subcategory.findByIdAndUpdate(material._id, { quantity: Math.abs(remainingQuantity) });
           }
           await ProductionManager.findOneAndUpdate(
             { order_id: orderId },
