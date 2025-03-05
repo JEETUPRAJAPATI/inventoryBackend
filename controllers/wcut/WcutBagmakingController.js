@@ -182,8 +182,23 @@ class WcutBagmakingController {
         const activeSubcategories = await Subcategory.find({ _id: { $in: subcategoryIds }, status: "active" });
         if (!activeSubcategories.length) return res.status(400).json({ success: false, message: "No active subcategories available." });
 
+        console.log('---------------------------------------------------------')
 
+        console.log('activeSubcategories.length ', activeSubcategories.length)
+
+        console.log('matchedSubcategory.quantity', matchedSubcategory.quantity)
+
+        console.log('material.quantity ', material.quantity)
+
+        console.log('material._id ', material._id)
+
+        console.log('matchedSubcategory._id', matchedSubcategory._id)
+
+        // return false;
         const remainingQuantity = remaining_quantity - matchedSubcategory.quantity;
+
+        console.log('remainingQuantity', remainingQuantity == matchedSubcategory.quantity)
+        console.log('---------------------------------------------------------')
         // Update subcategory and production records
         if (matchedSubcategory.quantity === material.quantity && activeSubcategories.length > 1) {
           await Subcategory.findByIdAndUpdate(matchedSubcategory._id, { status: "inactive" });
@@ -193,8 +208,10 @@ class WcutBagmakingController {
             { new: true }
           );
         } else if (activeSubcategories.length === 1) {
-          if (remainingQuantity === matchedSubcategory.quantity) {
-            await Subcategory.findByIdAndUpdate(material._id, { status: "inactive", quantity: 0 });
+          // return false;
+          // remainingQuantity === matchedSubcategory.quantity
+          if (matchedSubcategory.quantity === material.quantity) {
+            await Subcategory.findByIdAndUpdate(material._id, { status: "inactive" });
           } else if (remainingQuantity !== 0) {
             await Subcategory.findByIdAndUpdate(material._id, { quantity: Math.abs(remainingQuantity) });
           }
@@ -930,11 +947,11 @@ class WcutBagmakingController {
 
       console.log('subcategoryMatches', subcategoryMatches);
       if (!subcategoryMatches || subcategoryMatches.length === 0) {
-        return res.status(404).json({
+        return res.json({
           success: false,
           totalQuantity: 0,
           requiredMaterials: [],
-          message: "No Row Material found for this order"
+          message: "No Row Material and category found for this order"
         });
       }
       const productionRecord = await ProductionManager.findOne({ order_id: orderId });

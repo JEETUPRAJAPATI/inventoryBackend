@@ -722,7 +722,7 @@ class DcutBagmakingController {
 
       console.log('subcategoryMatches', subcategoryMatches);
       if (!subcategoryMatches || subcategoryMatches.length === 0) {
-        return res.status(404).json({
+        return res.json({
           success: false,
           totalQuantity: 0,
           requiredMaterials: [],
