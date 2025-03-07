@@ -186,6 +186,19 @@ class DcutBagmakingController {
         if (!activeSubcategories.length) return res.status(400).json({ success: false, message: "No active subcategories available." });
 
 
+        console.log('---------------------------------------------------------')
+
+        console.log('activeSubcategories.length ', activeSubcategories.length)
+
+        console.log('matchedSubcategory.quantity', matchedSubcategory.quantity)
+
+        console.log('material.quantity ', material.quantity)
+
+        console.log('material._id ', material._id)
+
+        console.log('matchedSubcategory._id', matchedSubcategory._id)
+
+
         const remainingQuantity = remaining_quantity - matchedSubcategory.quantity;
         // Update subcategory and production records
         if (matchedSubcategory.quantity === material.quantity && activeSubcategories.length > 1) {
@@ -196,8 +209,9 @@ class DcutBagmakingController {
             { new: true }
           );
         } else if (activeSubcategories.length === 1) {
-          if (remainingQuantity === matchedSubcategory.quantity) {
-            await Subcategory.findByIdAndUpdate(material._id, { status: "inactive", quantity: 0 });
+
+          if (matchedSubcategory.quantity === material.quantity) {
+            await Subcategory.findByIdAndUpdate(material._id, { status: "inactive" });
           } else if (remainingQuantity !== 0) {
             await Subcategory.findByIdAndUpdate(material._id, { quantity: Math.abs(remainingQuantity) });
           }

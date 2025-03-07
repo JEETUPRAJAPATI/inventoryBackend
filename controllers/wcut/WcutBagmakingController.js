@@ -951,7 +951,7 @@ class WcutBagmakingController {
           success: false,
           totalQuantity: 0,
           requiredMaterials: [],
-          message: "No Row Material and category found for this order"
+          message: "No Row Material found for this order"
         });
       }
       const productionRecord = await ProductionManager.findOne({ order_id: orderId });

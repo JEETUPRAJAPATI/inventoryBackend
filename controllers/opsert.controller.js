@@ -59,7 +59,7 @@ class OpsertController {
       const opsertRecords = await Opsert.find({
         order_id: { $in: orderIds },
         status: statusFilter // Apply status filter here
-      });
+      }).sort({ createdAt: -1 });
 
       console.log('Opsert records----', opsertRecords);
 
