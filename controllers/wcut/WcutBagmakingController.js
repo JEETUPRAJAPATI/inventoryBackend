@@ -184,6 +184,7 @@ class WcutBagmakingController {
 
         console.log('---------------------------------------------------------')
 
+        console.log('remainingQuantity', remaining_quantity)
         console.log('activeSubcategories.length ', activeSubcategories.length)
 
         console.log('matchedSubcategory.quantity', matchedSubcategory.quantity)
@@ -195,9 +196,10 @@ class WcutBagmakingController {
         console.log('matchedSubcategory._id', matchedSubcategory._id)
 
         // return false;
-        const remainingQuantity = remaining_quantity - matchedSubcategory.quantity;
+        const remainingQuantity = Math.abs(remaining_quantity - matchedSubcategory.quantity);
 
-        console.log('remainingQuantity', remainingQuantity == matchedSubcategory.quantity)
+        console.log('remainingQuantity', remainingQuantity)
+        // return false;
         console.log('---------------------------------------------------------')
         // Update subcategory and production records
         if (matchedSubcategory.quantity === material.quantity && activeSubcategories.length > 1) {
@@ -210,10 +212,10 @@ class WcutBagmakingController {
         } else if (activeSubcategories.length === 1) {
           // return false;
           // remainingQuantity === matchedSubcategory.quantity
-          if (matchedSubcategory.quantity === material.quantity) {
+          if (matchedSubcategory.quantity === material.quantity && remainingQuantity == 0) {
             await Subcategory.findByIdAndUpdate(material._id, { status: "inactive" });
           } else if (remainingQuantity !== 0) {
-            await Subcategory.findByIdAndUpdate(material._id, { quantity: Math.abs(remainingQuantity) });
+            await Subcategory.findByIdAndUpdate(material._id, { quantity: remainingQuantity });
           }
           await ProductionManager.findOneAndUpdate(
             { order_id: orderId },

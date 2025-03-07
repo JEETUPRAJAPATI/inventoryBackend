@@ -199,7 +199,7 @@ class DcutBagmakingController {
         console.log('matchedSubcategory._id', matchedSubcategory._id)
 
 
-        const remainingQuantity = remaining_quantity - matchedSubcategory.quantity;
+        const remainingQuantity = Math.abs(remaining_quantity - matchedSubcategory.quantity);
         // Update subcategory and production records
         if (matchedSubcategory.quantity === material.quantity && activeSubcategories.length > 1) {
           await Subcategory.findByIdAndUpdate(matchedSubcategory._id, { status: "inactive" });
@@ -210,10 +210,10 @@ class DcutBagmakingController {
           );
         } else if (activeSubcategories.length === 1) {
 
-          if (matchedSubcategory.quantity === material.quantity) {
+          if (matchedSubcategory.quantity === material.quantity && remainingQuantity == 0) {
             await Subcategory.findByIdAndUpdate(material._id, { status: "inactive" });
           } else if (remainingQuantity !== 0) {
-            await Subcategory.findByIdAndUpdate(material._id, { quantity: Math.abs(remainingQuantity) });
+            await Subcategory.findByIdAndUpdate(material._id, { quantity: remainingQuantity });
           }
           await ProductionManager.findOneAndUpdate(
             { order_id: orderId },
