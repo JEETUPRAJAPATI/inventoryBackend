@@ -69,13 +69,13 @@ const sendInvoiceEmail = async (invoiceId) => {
         <body>
             <div class="container">
                 <div class="header">
-                    <img src="https://inventory-frontend-indol.vercel.app/assets/logo-DrMKrpZD.jpg" alt="Company Logo">
+                    <img src="https://inventory-frontend-indol.vercel.app/assets/logo.jpg" alt="Company Logo">
                     <h2>Invoice</h2>
                 </div>
-                <p><strong>Company Name:</strong> Techize Builder</p>
-                <p><strong>Address:</strong> 123 Business Street, City</p>
-                <p><strong>Email:</strong> info@techizebuilder.com</p>
-                <p><strong>Phone:</strong> +1-234-567-890</p>
+                   <p><strong>Company Name:</strong>Thailiwale</p>
+                <p><strong>Address:</strong>201/1/4, SR Compound, Dewas Naka, Lasudia Mori, Indore, Madhya Pradesh 452016</p>
+                <p><strong>Email:</strong> info@thailiwale.com</p>
+                <p><strong>Phone:</strong> +91 7999857050</p>
                 <hr>
 
                 <p><strong>Invoice No:</strong> ${invoice.invoice_id}</p>
@@ -230,15 +230,15 @@ const sendSalesOverviewEmail = async (order) => {
 <body>
     <div class="container">
         <div class="header">
-            <img src="https://inventory-frontend-indol.vercel.app/assets/logo-DrMKrpZD.jpg" alt="Company Logo">
+            <img src="https://inventory-frontend-indol.vercel.app/assets/logo.jpg" alt="Company Logo">
             <h2>Invoice</h2>
         </div>
 
         <div class="details">
-            <p><strong>Company Name:</strong> Techize Builder</p>
-            <p><strong>Address:</strong> 123 Business Street, City</p>
-            <p><strong>Email:</strong> info@techizebuilder.com</p>
-            <p><strong>Phone:</strong> +1-234-567-890</p>
+                 <p><strong>Company Name:</strong>Thailiwale</p>
+                <p><strong>Address:</strong>201/1/4, SR Compound, Dewas Naka, Lasudia Mori, Indore, Madhya Pradesh 452016</p>
+                <p><strong>Email:</strong> info@thailiwale.com</p>
+                <p><strong>Phone:</strong> +91 7999857050</p>
         </div>
 
         <div class="table-container">
@@ -404,15 +404,15 @@ const sendCompletedEmail = async (delivery, salesRecord) => {
         <body>
         <div class="container">
             <div class="header">
-                <img src="https://inventory-frontend-indol.vercel.app/assets/logo-DrMKrpZD.jpg" alt="Company Logo">
+                <img src="https://inventory-frontend-indol.vercel.app/assets/logo.jpg" alt="Company Logo">
                 <h2>Oder & Delivery Overview</h2>
             </div>
 
             <div class="details">
-                <p><strong>Company Name:</strong> Techize Builder</p>
-                <p><strong>Address:</strong> 123 Business Street, City</p>
-                <p><strong>Email:</strong> info@techizebuilder.com</p>
-                <p><strong>Phone:</strong> +1-234-567-890</p>
+                 <p><strong>Company Name:</strong>Thailiwale</p>
+                <p><strong>Address:</strong>201/1/4, SR Compound, Dewas Naka, Lasudia Mori, Indore, Madhya Pradesh 452016</p>
+                <p><strong>Email:</strong> info@thailiwale.com</p>
+                <p><strong>Phone:</strong> +91 7999857050</p>
             </div>
 
             <div class="table-container">

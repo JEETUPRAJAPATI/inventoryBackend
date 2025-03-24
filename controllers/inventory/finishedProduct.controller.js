@@ -115,6 +115,11 @@ class FinishedProductController {
       let dcutUnitNumber = "N/A";
       let opsertUnitNumber = "N/A";
 
+      let flexDate = "N/A";
+      let wcutDate = "N/A";
+      let dcutDate = "N/A";
+      let opsertDate = "N/A";
+
       if (productionManager?.production_details?.type === 'WCut') {
         productionDetails = await Flexo.findOne({ order_id: product.order_id }).populate({
           path: 'subcategoryIds',
@@ -125,6 +130,8 @@ class FinishedProductController {
 
         flexoUnitNumber = productionDetails?.unit_number || "N/A";
         wcutUnitNumber = wcutData?.unit_number || "N/A";
+        flexDate = productionDetails?.updatedAt || "N/A";
+        wcutDate = wcutData?.updatedAt || "N/A";
 
       } else if (productionManager?.production_details?.type === 'DCut') {
         productionDetails = await DcutBagmaking.findOne({ order_id: product.order_id }).populate({
@@ -137,6 +144,9 @@ class FinishedProductController {
 
         dcutUnitNumber = dcutData?.unit_number || "N/A";
         opsertUnitNumber = opsertData?.unit_number || "N/A";
+
+        dcutDate = dcutData?.updatedAt || "N/A";
+        opsertDate = opsertData?.updatedAt || "N/A";
       }
 
       console.log("Production Details with Populated Subcategory:", productionDetails);
@@ -149,6 +159,12 @@ class FinishedProductController {
         packageDetails: packageData || {},
         deliveryDetails: delivery || {},
         productionDetails: productionDetails || {},
+        operatorCompleteDate: {
+          flexo: flexDate,
+          wcut: wcutDate,
+          dcut: dcutDate,
+          opsert: opsertDate,
+        },
         unitNumbers: {
           flexo: flexoUnitNumber,
           wcut: wcutUnitNumber,
