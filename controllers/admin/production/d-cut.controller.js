@@ -15,7 +15,7 @@ class DCutProductionController {
         data: productions.data
       });
     } catch (error) {
-      logger.error('Error fetching D-Cut Opsert Printing production:', error);
+      logger.error('Error fetching D-Cut Offset  Printing production:', error);
       res.status(500).json({ success: false, message: error.message });
     }
   }
@@ -49,7 +49,7 @@ class DCutProductionController {
         data: productions.data
       });
     } catch (error) {
-      logger.error('Error fetching D-Cut Opsert Printing production:', error);
+      logger.error('Error fetching D-Cut Offset  Printing production:', error);
       res.status(500).json({ success: false, message: error.message });
     }
   }

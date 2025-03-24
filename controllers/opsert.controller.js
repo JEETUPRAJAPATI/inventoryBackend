@@ -88,7 +88,7 @@ class OpsertController {
       });
 
     } catch (error) {
-      console.error("Error listing Opsert entries:", error);
+      console.error("Error listing Offset entries:", error);
       res.status(500).json({
         success: false,
         message: "An error occurred while fetching the entries. Please try again later."
@@ -112,7 +112,7 @@ class OpsertController {
       });
       console.log('opsertRecord', opsertRecord);
       if (!opsertRecord) {
-        return res.status(404).json({ message: 'Opsert record not found' });
+        return res.status(404).json({ message: 'Offset  record not found' });
       }
 
       // Update the status and remarks for the found record
@@ -125,7 +125,7 @@ class OpsertController {
 
       return res.status(200).json({
         success: true,
-        message: 'Opsert record status updated successfully',
+        message: 'Offset  record status updated successfully',
         opsertRecord
       });
     } catch (error) {
@@ -146,7 +146,7 @@ class OpsertController {
       });
       console.log('opsertRecord', opsertRecord);
       if (!opsertRecord) {
-        return res.status(404).json({ message: 'Opsert record not found' });
+        return res.status(404).json({ message: 'Offset record not found' });
       }
 
       opsertRecord.status = 'delivered';

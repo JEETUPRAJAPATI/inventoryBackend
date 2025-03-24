@@ -400,6 +400,7 @@ const sendCompletedEmail = async (delivery, salesRecord) => {
             color: #666;
         }
             </style>
+            Offset
         </head>
         <body>
         <div class="container">

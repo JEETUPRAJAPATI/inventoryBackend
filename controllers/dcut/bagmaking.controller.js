@@ -320,7 +320,7 @@ class DcutBagmakingController {
       const updatedProductionManager = await ProductionManager.findOneAndUpdate(
         { order_id: orderId },
         {
-          $set: { "production_details.progress": "D-Cut Opsert printing" }
+          $set: { "production_details.progress": "D-Cut Offset  printing" }
         },
         { new: true }
       );
@@ -383,7 +383,7 @@ class DcutBagmakingController {
 
       return res.status(200).json({
         success: true,
-        message: "Order moved to Opsert successfully.",
+        message: "Order moved to Offset  successfully.",
         data: {
           productionManager: updatedProductionManager,
           opsert: opsertRecord
@@ -394,7 +394,7 @@ class DcutBagmakingController {
       console.error("❌ Error in handleMoveToOpsert:", error);
       return res.status(500).json({
         success: false,
-        message: "An error occurred while moving the order to Opsert. Please try again."
+        message: "An error occurred while moving the order to Offset . Please try again."
       });
     }
   }

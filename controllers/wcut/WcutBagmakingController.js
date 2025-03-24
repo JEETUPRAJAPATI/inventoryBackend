@@ -481,7 +481,7 @@ class WcutBagmakingController {
       });
 
     } catch (error) {
-      console.error("Error listing Opsert entries:", error);
+      console.error("Error listing Offset  entries:", error);
       res.status(500).json({
         success: false,
         message: "An error occurred while fetching the entries. Please try again later."
@@ -537,7 +537,7 @@ class WcutBagmakingController {
       console.log('opsertRecord', opsertRecord);  // Make sure the record is found
 
       if (!opsertRecord) {
-        return res.status(404).json({ message: 'Opsert record not found' });
+        return res.status(404).json({ message: 'Offset  record not found' });
       }
 
       opsertRecord.status = 'delivered';  // Use "delivery", not "delivered"
