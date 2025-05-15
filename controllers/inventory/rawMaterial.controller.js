@@ -105,12 +105,12 @@ class RawMaterialController {
       quantity = Number(quantity);
 
       // Validate required fields
-      // if (!fabricColor || isNaN(rollSize) || isNaN(gsm) || !fabricQuality || isNaN(quantity) || !category) {
-      //   return res.status(400).json({
-      //     success: false,
-      //     message: "All fields are required and must be valid numbers.",
-      //   });
-      // }
+      if (!fabricColor || isNaN(rollSize) || isNaN(gsm) || !fabricQuality || isNaN(quantity) || !category) {
+        return res.status(400).json({
+          success: false,
+          message: "All fields are required and must be valid numbers.",
+        });
+      }
 
       // Validate category ID format
       if (!mongoose.Types.ObjectId.isValid(category)) {
