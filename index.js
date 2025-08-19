@@ -26,7 +26,8 @@ connectDB();
 // Middleware
 const allowedOrigins = [
   "https://inventory01.vercel.app", // your Vercel frontend
-  "http://localhost:3000"           // allow local dev frontend
+  "http://localhost:3010",
+  "http://localhost:5173"
 ];
 
 app.use(
@@ -48,6 +49,7 @@ app.use(
 // Handle preflight
 app.options("*", cors());
 // Middleware
+app.use(cors());
 app.use(morgan("combined"));
 app.use(express.json());
 app.use(express.static("static"));

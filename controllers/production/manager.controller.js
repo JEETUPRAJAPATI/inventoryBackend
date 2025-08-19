@@ -103,9 +103,17 @@ class ProductionManagerController {
         (s) => !usedIds.has(String(s._id))
       );
 
+      let exactMatch = subcategoryMatches.find(
+      (s) => Number(s.quantity) === Number(quantity_kgs)
+    );
+    let largerRolls = subcategoryMatches
+      .filter((s) => Number(s.quantity) > Number(quantity_kgs))
+      .sort((a, b) => Number(a.quantity) - Number(b.quantity)); // pick smallest larger
+
+
       // Sort subcategory matches in descending order (to use largest rolls first)
 
-      subcategoryMatches.sort((a, b) => a.quantity - b.quantity);
+      subcategoryMatches.sort((a, b) => Number(a.quantity) - Number(b.quantity));
 
       // Select required rolls dynamically until quantity_kgs and quantity_rolls are met
       // Select required rolls dynamically until quantity_kgs and quantity_rolls are met
@@ -113,21 +121,36 @@ class ProductionManagerController {
       let totalSelectedKg = 0;
       let totalRollsSelected = 0;
 
-      for (const roll of subcategoryMatches) {
-        if (
-          totalRollsSelected < quantity_rolls &&
-          totalSelectedKg < quantity_kgs
-        ) {
-          selectedMaterials.push(roll);
-          totalSelectedKg += roll.quantity;
-          totalRollsSelected++;
-        }
-        if (
-          totalRollsSelected >= quantity_rolls ||
-          totalSelectedKg >= quantity_kgs
-        )
-          break;
-      }
+      if (exactMatch) {
+      selectedMaterials.push(exactMatch);
+      totalSelectedKg += Number(exactMatch.quantity);
+      totalRollsSelected++;
+    }
+
+
+   // Step 2: if still not satisfied, check nearest larger
+if (totalSelectedKg < quantity_kgs && totalRollsSelected < quantity_rolls && largerRolls.length > 0) {
+  const nearestLarger = largerRolls[0]; // smallest larger roll
+  selectedMaterials.push(nearestLarger);
+  totalSelectedKg += Number(nearestLarger.quantity);
+  totalRollsSelected++;
+}
+
+// Step 3: if still not satisfied, then fill with remaining rolls (smallest first)
+for (const roll of subcategoryMatches) {
+  // skip ones already selected
+  if (selectedMaterials.find(r => r._id === roll._id)) continue;
+
+  if (totalSelectedKg < quantity_kgs && totalRollsSelected < quantity_rolls) {
+    selectedMaterials.push(roll);
+    totalSelectedKg += Number(roll.quantity);
+    totalRollsSelected++;
+  }
+
+  if (totalSelectedKg >= quantity_kgs && totalRollsSelected >= quantity_rolls) {
+    break;
+  }
+}
 
       console.log(" totalRollsSelected:", totalRollsSelected);
       console.log(" quantity_rolls:", quantity_rolls);
