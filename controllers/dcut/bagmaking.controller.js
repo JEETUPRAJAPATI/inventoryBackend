@@ -152,12 +152,10 @@ class DcutBagmakingController {
         !existingRecord.subcategoryIds ||
         existingRecord.subcategoryIds.length === 0
       ) {
-        return res
-          .status(404)
-          .json({
-            success: false,
-            message: "No subcategories found for this order.",
-          });
+        return res.status(404).json({
+          success: false,
+          message: "No subcategories found for this order.",
+        });
       }
 
       const subcategoryIds = existingRecord.subcategoryIds;
@@ -176,31 +174,25 @@ class DcutBagmakingController {
       console.log("qr code id :", id);
 
       if (!matchedSubcategory) {
-        return res
-          .status(400)
-          .json({
-            success: false,
-            message: "Invalid QR code. No matching subcategory found.",
-          });
+        return res.status(400).json({
+          success: false,
+          message: "Invalid QR code. No matching subcategory found.",
+        });
       }
       // 3️⃣ Check if the scanned subcategory ID exists inside this order's subcategories
       if (!existingRecord.subcategoryIds.includes(id)) {
-        return res
-          .status(400)
-          .json({
-            success: false,
-            message:
-              "Invalid QR code. Subcategory does not belong to this order.",
-          });
+        return res.status(400).json({
+          success: false,
+          message:
+            "Invalid QR code. Subcategory does not belong to this order.",
+        });
       }
       if (id !== materialId) {
-        return res
-          .status(400)
-          .json({
-            success: false,
-            message:
-              "Wrong QR code selected. Material does not match the expected quantity.",
-          });
+        return res.status(400).json({
+          success: false,
+          message:
+            "Wrong QR code selected. Material does not match the expected quantity.",
+        });
       }
 
       console.log("-----------------------------------------------");
@@ -238,12 +230,10 @@ class DcutBagmakingController {
           status: "active",
         });
         if (!activeSubcategories.length)
-          return res
-            .status(400)
-            .json({
-              success: false,
-              message: "No active subcategories available.",
-            });
+          return res.status(400).json({
+            success: false,
+            message: "No active subcategories available.",
+          });
 
         console.log(
           "---------------------------------------------------------"
@@ -658,7 +648,9 @@ class DcutBagmakingController {
   async getRecordsByType(req, res) {
     try {
       // Fetch all reports where type is 'w_cut_flexo'
-      const reports = await Report.find({ type: "d_cut_bag_making" });
+      const reports = await Report.find({ type: "d_cut_bag_making" }).sort({
+        createdAt: -1,
+      });
 
       // Fetch related sales orders and merge data
       const result = await Promise.all(
@@ -680,7 +672,7 @@ class DcutBagmakingController {
         })
       );
       console.log("result is ", result);
-      res.status(200).json({ success: true, data: result });
+      res.status(200).json({ success: true, data: result, debugger: true });
     } catch (error) {
       console.error(error);
       res.status(500).json({ message: "Error fetching records", error });
@@ -690,7 +682,9 @@ class DcutBagmakingController {
   async getRecordsBagmakingByType(req, res) {
     try {
       // Fetch all reports where type is 'w_cut_flexo'
-      const reports = await Report.find({ type: "d_cut_opsert" });
+      const reports = await Report.find({ type: "d_cut_opsert" }).sort({
+        createdAt: -1,
+      });
 
       // Fetch related sales orders and merge data
       const result = await Promise.all(
@@ -820,12 +814,10 @@ class DcutBagmakingController {
       // Extract subcategory IDs from Flexo table
       const subcategoryIds = existingRecord.subcategoryIds || [];
       if (subcategoryIds.length === 0) {
-        return res
-          .status(404)
-          .json({
-            success: false,
-            message: "No Row Material found for this order",
-          });
+        return res.status(404).json({
+          success: false,
+          message: "No Row Material found for this order",
+        });
       }
       // Fetch sales record
       // Fetch matching subcategory records
