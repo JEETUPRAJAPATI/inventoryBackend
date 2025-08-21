@@ -940,7 +940,9 @@ class WcutBagmakingController {
   async getRecordsByType(req, res) {
     try {
       // Fetch all reports where type is 'w_cut_flexo'
-      const reports = await Report.find({ type: "w_cut_flexo" });
+      const reports = await Report.find({ type: "w_cut_flexo" }).sort({
+        createdAt: -1,
+      });
 
       // Fetch related sales orders and merge data
       const result = await Promise.all(
@@ -972,7 +974,9 @@ class WcutBagmakingController {
   async getRecordsBagmakingByType(req, res) {
     try {
       // Fetch all reports where type is 'w_cut_flexo'
-      const reports = await Report.find({ type: "w_cut_bag_making" });
+      const reports = await Report.find({ type: "w_cut_bag_making" }).sort({
+        createdAt: -1,
+      });
 
       // Fetch related sales orders and merge data
       const result = await Promise.all(
