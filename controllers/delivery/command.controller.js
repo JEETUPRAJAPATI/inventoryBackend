@@ -58,12 +58,13 @@ class DeliveryCommandController {
 
       console.log('details is', existingDelivery);
       // Check if required fields are available
-      if (!existingDelivery.driverContact || !existingDelivery.driverName || !existingDelivery.vehicleNo) {
-        return res.status(400).json({
-          success: false,
-          message: 'Cannot update delivery. Driver contact, driver name, and vehicle number must be provided.'
-        });
-      }
+      // if (!existingDelivery.driverContact || !existingDelivery.driverName || !existingDelivery.vehicleNo) {
+      //   return res.status(400).json({
+      //     success: false,
+      //     message: 'Cannot update delivery. Driver contact, driver name, and vehicle number must be provided.'
+      //   });
+      // }
+
       // Proceed with the update if all required fields exist
       const updatedDelivery = await Delivery.findOneAndUpdate(
         { _id: req.params.id }, // Find by ID
