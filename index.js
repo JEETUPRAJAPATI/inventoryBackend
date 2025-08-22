@@ -12,6 +12,7 @@ const productionManagerRoutes = require("./routes/production/manager.routes");
 const dcutBagmaking = require("./routes/dcut/bagmaking.routes");
 const wcutBagmaking = require("./routes/wcut/bagmaking.routes");
 const errorHandler = require("./middleware/errorHandler");
+const driverRouter = require("./routes/driver.routes");
 const logger = require("./utils/logger");
 const path = require("path");
 const morgan = require("morgan");
@@ -85,7 +86,7 @@ app.use("/api/production/manager", productionManagerRoutes);
 app.use("/api/inventory", inventoryRouter);
 app.use("/api/wcut", wcutBagmaking);
 app.use("/api/dcut", dcutBagmaking);
-
+app.use("/api/driver", driverRouter);
 // Error handling middleware
 app.use(errorHandler);
 

@@ -915,7 +915,7 @@ class DcutBagmakingController {
       //     .status(404)
       //     .json({
       //       success: false,
-      //       message: "No Row Material found for this order",
+      //       message: "No Raw Material found for this order",
       //     });
       // }
       // Fetch sales record
@@ -967,7 +967,7 @@ class DcutBagmakingController {
           success: false,
           totalQuantity: 0,
           requiredMaterials: [],
-          message: "No Row Material found for this order",
+          message: "No Raw Material found for this order",
         });
       }
 

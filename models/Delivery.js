@@ -1,17 +1,10 @@
-const mongoose = require('mongoose');
-const deliverySchema = require('./schemas/delivery.schema');
+// models/Driver.js
+const mongoose = require("mongoose");
 
-// Add any delivery-specific methods here
-deliverySchema.methods.isDelivered = function() {
-  return this.status === 'delivered';
-};
+const driverSchema = new mongoose.Schema({
+  name: { type: String, required: true },
+  vehicleNumber: { type: String, required: true },
+  contact: { type: String, required: true },
+});
 
-// Add any static methods here
-deliverySchema.statics.findActiveDeliveries = function() {
-  return this.find({ 
-    isDeleted: false,
-    status: { $ne: 'cancelled' }
-  });
-};
-
-module.exports = mongoose.model('Delivery', deliverySchema);
+module.exports = mongoose.models.Driver || mongoose.model("Driver", driverSchema);
