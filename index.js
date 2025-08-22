@@ -13,7 +13,7 @@ const dcutBagmaking = require("./routes/dcut/bagmaking.routes");
 const wcutBagmaking = require("./routes/wcut/bagmaking.routes");
 const driverRouter = require("./routes/driver.routes");
 const errorHandler = require("./middleware/errorHandler");
-const driverRouter = require("./routes/driver.routes");
+
 const logger = require("./utils/logger");
 const path = require("path");
 const morgan = require("morgan");
