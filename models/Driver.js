@@ -1,4 +1,3 @@
-
 // models/Driver.js
 const mongoose = require("mongoose");
 
@@ -8,4 +7,5 @@ const driverSchema = new mongoose.Schema({
   contact: { type: String, required: true },
 });
 
-module.exports = mongoose.models.Driver || mongoose.model("Driver", driverSchema);
+module.exports =
+  mongoose.models.Driver || mongoose.model("Driver", driverSchema);

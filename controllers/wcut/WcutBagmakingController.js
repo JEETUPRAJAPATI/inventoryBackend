@@ -147,19 +147,28 @@ class WcutBagmakingController {
       console.log("Production Record - quantity_kgs:", quantity_kgs);
 
       // Fetch subcategory IDs from Flexo
-      const existingRecord = await Flexo.findOne({ order_id: orderId });
-      if (
-        !existingRecord ||
-        !existingRecord.subcategoryIds ||
-        existingRecord.subcategoryIds.length === 0
-      ) {
-        return res.status(404).json({
-          success: false,
-          message: "No subcategories found for this order",
-        });
-      }
+      const existingRecord = await Subcategory.find({
+        rollSize: rollSize,
+        gsm: gsm,
+        fabricColor: fabricColor,
+        status: "active",
+      });
 
-      const subcategoryIds = existingRecord.subcategoryIds;
+      console.log("existingRecord", existingRecord);
+      // return false;
+
+      // if (
+      //   !existingRecord ||
+      //   !existingRecord.subcategoryIds ||
+      //   existingRecord.subcategoryIds.length === 0
+      // ) {
+      //   return res.status(404).json({
+      //     success: false,
+      //     message: "No subcategories found for this order",
+      //   });
+      // }
+
+      const subcategoryIds = existingRecord.map((doc) => doc._id);
 
       // 3️⃣ Find the exact subcategory that matches all scanned properties
       const matchedSubcategory = await Subcategory.findOne({
@@ -177,8 +186,22 @@ class WcutBagmakingController {
           message: "Invalid QR code. No matching subcategory found.",
         });
       }
+
+      console.log("matchedSubcategory", matchedSubcategory);
+
       // 3️⃣ Check if the scanned subcategory ID exists inside this order's subcategories
-      if (!existingRecord.subcategoryIds.includes(id)) {
+      // if (!existingRecord.subcategoryIds.includes(id)) {
+      //   return res.status(400).json({
+      //     success: false,
+      //     message:
+      //       "Invalid QR code. Subcategory does not belong to this order.",
+      //   });
+      // }
+      const isValid = subcategoryIds.some(
+        (subId) => subId.toString() === id.toString()
+      );
+
+      if (!isValid) {
         return res.status(400).json({
           success: false,
           message:
@@ -231,6 +254,7 @@ class WcutBagmakingController {
           _id: { $in: subcategoryIds },
           status: "active",
         });
+
         if (!activeSubcategories.length)
           return res.status(400).json({
             success: false,
@@ -246,78 +270,95 @@ class WcutBagmakingController {
 
         console.log("matchedSubcategory.quantity", matchedSubcategory.quantity);
 
-        console.log("material.quantity ", material.quantity);
+        console.log("material.quantity", material.quantity);
 
         console.log("material._id ", material._id);
 
         console.log("matchedSubcategory._id", matchedSubcategory._id);
 
         // return false;
-        const remainingQuantity = Math.abs(
-          remaining_quantity - matchedSubcategory.quantity
-        );
+        // const remainingQuantity = Math.abs(
+        //   remaining_quantity - matchedSubcategory.quantity
+        // );
+        // const remainingQuantity = remaining_quantity - matchedSubcategory.quantity;
 
-        console.log("remainingQuantity", remainingQuantity);
-        // return false;
         console.log(
           "---------------------------------------------------------"
         );
-        // Update subcategory and production records
-        if (
-          matchedSubcategory.quantity === material.quantity &&
-          activeSubcategories.length > 1
-        ) {
+
+        // calculate how much is still required
+        let remainingQuantity =
+          productionRecord.production_details.remaining_quantity;
+
+        console.log("remainingQuantity", remainingQuantity);
+        // how much is in scanned roll
+        let scannedQty = matchedSubcategory.quantity;
+
+        if (scannedQty <= remainingQuantity) {
+          // Case 1: Roll fits fully into remaining qty (exact or less)
+          remainingQuantity -= scannedQty;
+
+          // mark this roll inactive (fully used)
           await Subcategory.findByIdAndUpdate(matchedSubcategory._id, {
             status: "inactive",
           });
-          await ProductionManager.findOneAndUpdate(
-            { order_id: orderId },
-            { "production_details.remaining_quantity": remainingQuantity },
-            { new: true }
-          );
-        } else if (activeSubcategories.length === 1) {
-          // return false;
-          // remainingQuantity === matchedSubcategory.quantity
-          if (
-            matchedSubcategory.quantity === material.quantity &&
-            remainingQuantity == 0
-          ) {
-            await Subcategory.findByIdAndUpdate(material._id, {
-              status: "inactive",
-            });
-          } else if (remainingQuantity !== 0) {
-            // await Subcategory.findByIdAndUpdate(material._id, {
-            //   quantity: remainingQuantity,
-            //   is_used: false, // ✅ update status to active
-            // });
-            await Subcategory.create({
-              fabricColor: material.fabricColor,
-              rollSize: material.rollSize,
-              gsm: material.gsm,
-              fabricQuality: material.fabricQuality,
-              quantity: remainingQuantity, // your updated quantity
-              category: material.category,
-              is_used: false,
-              status: "active",
-              createdAt: new Date(),
-            });
-            // Mark old roll as inactive
-            await Subcategory.findByIdAndUpdate(material._id, {
-              status: "inactive",
-            });
-          }
+        } else {
+          // Case 2: Roll is larger than remaining qty (overshoot)
+          const leftoverQty = scannedQty - remainingQuantity;
 
-          await ProductionManager.findOneAndUpdate(
-            { order_id: orderId },
-            { "production_details.remaining_quantity": 0 },
-            { new: true }
-          );
+          // create new roll with leftover
+          await Subcategory.create({
+            fabricColor: matchedSubcategory.fabricColor,
+            rollSize: matchedSubcategory.rollSize,
+            gsm: matchedSubcategory.gsm,
+            fabricQuality: matchedSubcategory.fabricQuality,
+            quantity: leftoverQty, // leftover part
+            category: matchedSubcategory.category,
+            is_used: false,
+            status: "active",
+            createdAt: new Date(),
+          });
+
+          // mark original roll inactive
+          await Subcategory.findByIdAndUpdate(matchedSubcategory._id, {
+            status: "inactive",
+          });
+
+          // all required qty consumed
+          remainingQuantity = 0;
+        }
+
+        // ✅ update production manager remaining qty
+        await ProductionManager.findOneAndUpdate(
+          { order_id: orderId },
+          { "production_details.remaining_quantity": remainingQuantity },
+          { new: true }
+        );
+        // Update subcategory and production records
+
+        // return false;
+        // remainingQuantity === matchedSubcategory.quantity
+
+        if (remainingQuantity === 0) {
           await Flexo.updateOne(
             { order_id: orderId },
-            { status: "in_progress" },
+            {
+              $set: { status: "in_progress" },
+              $addToSet: { subcategoryIds: matchedSubcategory._id },
+            },
+            { upsert: true }
+          );
+        } else {
+          // if needed, you can still attach the scanned subcategory without changing status
+          await Flexo.updateOne(
+            { order_id: orderId },
+            {
+              $addToSet: { subcategoryIds: matchedSubcategory._id },
+            },
             { upsert: true }
           );
         }
+
         return res.json({
           success: true,
           message: "Order verification successful.",
@@ -1054,29 +1095,23 @@ class WcutBagmakingController {
           .json({ success: false, message: "Records not found" });
       }
       // Extract subcategory IDs from Flexo table
-      const subcategoryIds = existingRecord.subcategoryIds || [];
-      if (subcategoryIds.length === 0) {
-        return res.status(404).json({
-          success: false,
-          message: "No Raw Material found for this order",
-        });
-      }
+      // const subcategoryIds = existingRecord.subcategoryIds || [];
+      // if (subcategoryIds.length === 0) {
+      //   return res.status(404).json({
+      //     success: false,
+      //     message: "No Raw Material found for this order",
+      //   });
+      // }
       // Fetch sales record
       // Fetch matching subcategory records
-      const subcategoryMatches = await Subcategory.find({
-        _id: { $in: subcategoryIds }, // Filter by the subcategory IDs from Flexo
-        // status: 'active'
-      });
 
-      console.log("subcategoryMatches", subcategoryMatches);
-      if (!subcategoryMatches || subcategoryMatches.length === 0) {
-        return res.json({
-          success: false,
-          totalQuantity: 0,
-          requiredMaterials: [],
-          message: "No  Material found for this order",
-        });
+      const salesRecord = await SalesOrder.findOne({ orderId: orderId });
+      if (!salesRecord) {
+        return res
+          .status(404)
+          .json({ success: false, message: "Sales record not found" });
       }
+
       const productionRecord = await ProductionManager.findOne({
         order_id: orderId,
       });
@@ -1086,7 +1121,42 @@ class WcutBagmakingController {
           message: "Production record not found for the given order ID.",
         });
       }
-      const { remaining_quantity } = productionRecord.production_details;
+
+      const { fabricQuality } = salesRecord;
+      const { color: fabricColor, gsm } = salesRecord.bagDetails;
+
+      const { remaining_quantity, roll_size } =
+        productionRecord.production_details;
+      console.log("-----------------------------------------------");
+      console.log("Matched Subcategory - fabricQuality:", fabricQuality);
+      console.log("Matched Subcategory - Fabric Color:", fabricColor);
+      console.log("Matched Subcategory - Fabric gsm:", gsm);
+      console.log("Matched Subcategory - rollSize:", roll_size);
+      // Fetch matching subcategories (active raw materials)
+      let subcategoryMatches = await Subcategory.find({
+        fabricColor,
+        rollSize: parseInt(roll_size),
+        gsm,
+        fabricQuality,
+        status: "active",
+        is_used: false,
+      });
+
+      // const subcategoryMatches = await Subcategory.find({
+      //   _id: { $in: subcategoryIds }, // Filter by the subcategory IDs from Flexo
+      //   // status: 'active'
+      // });
+
+      console.log("subcategoryMatches", subcategoryMatches);
+      if (!subcategoryMatches || subcategoryMatches.length === 0) {
+        return res.json({
+          success: false,
+          totalQuantity: 0,
+          requiredMaterials: [],
+          message: "No Raw Material found for this order",
+        });
+      }
+
       // Calculate total quantity from subcategories
       // let totalQuantity = subcategoryMatches.reduce((sum, subcategory) => sum + (subcategory.quantity || 0), 0);
       let totalQuantity = Number.isFinite(remaining_quantity)

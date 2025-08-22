@@ -20,13 +20,22 @@ const flexoSchema = new mongoose.Schema({
     trim: true,
     required: false
   },
+  // subcategoryIds: [
+  //   {
+  //     type: mongoose.Schema.Types.ObjectId,
+  //     ref: 'Subcategory', // Reference to the Subcategory model
+  //     required: true
+  //   }
+  // ],
   subcategoryIds: [
-    {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'Subcategory', // Reference to the Subcategory model
-      required: true
-    }
-  ],
+  {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Subcategory',
+    required: false,   // ✅ Not required
+    default: []        // ✅ Default to empty array
+  }
+],
+
   createdAt: {
     type: Date,
     default: Date.now

@@ -51,7 +51,6 @@ class ProductionManagerController {
         },
         updatedAt: new Date(),
       };
-
       console.log("updateData", updateData);
       // Fetch the related sales order
       const salesRecord = await SalesOrder.findOne({ orderId: order_id });
@@ -61,6 +60,17 @@ class ProductionManagerController {
           .json({ success: false, message: "Sales record not found" });
       }
 
+      // ✅ Update SalesOrder quantity_kgs only if it changed
+      if (Number(salesRecord.quantity) !== Number(quantity_kgs)) {
+        salesRecord.quantity = Number(quantity_kgs) || 0;
+        await salesRecord.save();
+      }
+
+      console.log("quantity_kgs", quantity_kgs);
+      console.log(" salesRecord.quantity", salesRecord.quantity);
+
+
+      // return false;
       const { fabricQuality } = salesRecord;
       const { color: fabricColor, gsm } = salesRecord.bagDetails;
 
@@ -79,118 +89,118 @@ class ProductionManagerController {
         is_used: false,
       });
 
-      // if (!subcategoryMatches.length) {
-      //   return res.status(404).json({ success: false, message: "No raw material available for this order." });
-      // }
+      if (!subcategoryMatches.length) {
+        return res.status(404).json({ success: false, message: "No raw material available for this order." });
+      }
 
       console.log("Matching subcategories:", subcategoryMatches);
 
       // Get all used subcategoryIds from Flexo and Dcut
-      const usedInFlexo = await Flexo.find({
-        subcategoryIds: { $in: subcategoryMatches.map((s) => s._id) },
-      });
-      const usedInDcut = await DcutBagmaking.find({
-        subcategoryIds: { $in: subcategoryMatches.map((s) => s._id) },
-      });
+      // const usedInFlexo = await Flexo.find({
+      //   subcategoryIds: { $in: subcategoryMatches.map((s) => s._id) },
+      // });
+      // const usedInDcut = await DcutBagmaking.find({
+      //   subcategoryIds: { $in: subcategoryMatches.map((s) => s._id) },
+      // });
 
-      const usedIds = new Set([
-        ...usedInFlexo.flatMap((doc) => doc.subcategoryIds.map(String)),
-        ...usedInDcut.flatMap((doc) => doc.subcategoryIds.map(String)),
-      ]);
+      // const usedIds = new Set([
+      //   ...usedInFlexo.flatMap((doc) => doc.subcategoryIds.map(String)),
+      //   ...usedInDcut.flatMap((doc) => doc.subcategoryIds.map(String)),
+      // ]);
 
       // Filter out used ones
-      subcategoryMatches = subcategoryMatches.filter(
-        (s) => !usedIds.has(String(s._id))
-      );
+      // subcategoryMatches = subcategoryMatches.filter(
+      //   (s) => !usedIds.has(String(s._id))
+      // );
 
-      let exactMatch = subcategoryMatches.find(
-      (s) => Number(s.quantity) === Number(quantity_kgs)
-    );
-    let largerRolls = subcategoryMatches
-      .filter((s) => Number(s.quantity) > Number(quantity_kgs))
-      .sort((a, b) => Number(a.quantity) - Number(b.quantity)); // pick smallest larger
+      // let exactMatch = subcategoryMatches.find(
+      //   (s) => Number(s.quantity) === Number(quantity_kgs)
+      // );
+      // let largerRolls = subcategoryMatches
+      //   .filter((s) => Number(s.quantity) > Number(quantity_kgs))
+      //   .sort((a, b) => Number(a.quantity) - Number(b.quantity)); // pick smallest larger
 
 
       // Sort subcategory matches in descending order (to use largest rolls first)
 
-      subcategoryMatches.sort((a, b) => Number(a.quantity) - Number(b.quantity));
+      // subcategoryMatches.sort((a, b) => Number(a.quantity) - Number(b.quantity));
 
       // Select required rolls dynamically until quantity_kgs and quantity_rolls are met
       // Select required rolls dynamically until quantity_kgs and quantity_rolls are met
-      let selectedMaterials = [];
-      let totalSelectedKg = 0;
-      let totalRollsSelected = 0;
+      // let selectedMaterials = [];
+      // let totalSelectedKg = 0;
+      // let totalRollsSelected = 0;
 
-      if (exactMatch) {
-      selectedMaterials.push(exactMatch);
-      totalSelectedKg += Number(exactMatch.quantity);
-      totalRollsSelected++;
-    }
+      // if (exactMatch) {
+      //   selectedMaterials.push(exactMatch);
+      //   totalSelectedKg += Number(exactMatch.quantity);
+      //   totalRollsSelected++;
+      // }
 
 
-   // Step 2: if still not satisfied, check nearest larger
-if (totalSelectedKg < quantity_kgs && totalRollsSelected < quantity_rolls && largerRolls.length > 0) {
-  const nearestLarger = largerRolls[0]; // smallest larger roll
-  selectedMaterials.push(nearestLarger);
-  totalSelectedKg += Number(nearestLarger.quantity);
-  totalRollsSelected++;
-}
+      // Step 2: if still not satisfied, check nearest larger
+      // if (totalSelectedKg < quantity_kgs && totalRollsSelected < quantity_rolls && largerRolls.length > 0) {
+      //   const nearestLarger = largerRolls[0]; // smallest larger roll
+      //   selectedMaterials.push(nearestLarger);
+      //   totalSelectedKg += Number(nearestLarger.quantity);
+      //   totalRollsSelected++;
+      // }
 
-// Step 3: if still not satisfied, then fill with remaining rolls (smallest first)
-for (const roll of subcategoryMatches) {
-  // skip ones already selected
-  if (selectedMaterials.find(r => r._id === roll._id)) continue;
+      // Step 3: if still not satisfied, then fill with remaining rolls (smallest first)
+      // for (const roll of subcategoryMatches) {
+      //   // skip ones already selected
+      //   if (selectedMaterials.find(r => r._id === roll._id)) continue;
 
-  if (totalSelectedKg < quantity_kgs && totalRollsSelected < quantity_rolls) {
-    selectedMaterials.push(roll);
-    totalSelectedKg += Number(roll.quantity);
-    totalRollsSelected++;
-  }
+      //   if (totalSelectedKg < quantity_kgs && totalRollsSelected < quantity_rolls) {
+      //     selectedMaterials.push(roll);
+      //     totalSelectedKg += Number(roll.quantity);
+      //     totalRollsSelected++;
+      //   }
 
-  if (totalSelectedKg >= quantity_kgs && totalRollsSelected >= quantity_rolls) {
-    break;
-  }
-}
+      //   if (totalSelectedKg >= quantity_kgs && totalRollsSelected >= quantity_rolls) {
+      //     break;
+      //   }
+      // }
 
-      console.log(" totalRollsSelected:", totalRollsSelected);
-      console.log(" quantity_rolls:", quantity_rolls);
+      // console.log(" totalRollsSelected:", totalRollsSelected);
+      // console.log(" quantity_rolls:", quantity_rolls);
 
       // If not enough weight, check how many rolls *would be needed* to meet the weight
-      if (totalSelectedKg < quantity_kgs) {
-        let requiredRollsToMeetWeight = 0;
-        let weightTracker = 0;
+      // if (totalSelectedKg < quantity_kgs) {
+      //   let requiredRollsToMeetWeight = 0;
+      //   let weightTracker = 0;
 
-        for (const roll of subcategoryMatches) {
-          weightTracker += roll.quantity;
-          requiredRollsToMeetWeight++;
-          if (weightTracker >= quantity_kgs) break;
-        }
+      //   for (const roll of subcategoryMatches) {
+      //     weightTracker += roll.quantity;
+      //     requiredRollsToMeetWeight++;
+      //     if (weightTracker >= quantity_kgs) break;
+      //   }
 
-        return res.status(400).json({
-          success: false,
-          message: `Insufficient material weight. You need ${quantity_kgs} kg, but only ${totalSelectedKg} kg is available with ${totalRollsSelected} rolls. You may need at least ${requiredRollsToMeetWeight} rolls to fulfill the weight requirement.`,
-        });
-      }
+      //   return res.status(400).json({
+      //     success: false,
+      //     message: `Insufficient material weight. You need ${quantity_kgs} kg, but only ${totalSelectedKg} kg is available with ${totalRollsSelected} rolls. You may need at least ${requiredRollsToMeetWeight} rolls to fulfill the weight requirement.`,
+      //   });
+      // }
 
-      // If not enough rolls
-      if (totalRollsSelected < quantity_rolls) {
-        return res.status(400).json({
-          success: false,
-          message: `Insufficient rolls available. You requested ${quantity_rolls} rolls, but only ${totalRollsSelected} were found. Please adjust your order or check available stock.`,
-        });
-      }
+      // // If not enough rolls
+      // if (totalRollsSelected < quantity_rolls) {
+      //   return res.status(400).json({
+      //     success: false,
+      //     message: `Insufficient rolls available. You requested ${quantity_rolls} rolls, but only ${totalRollsSelected} were found. Please adjust your order or check available stock.`,
+      //   });
+      // }
 
-      const subcategoryIds = selectedMaterials.map((item) => item._id);
+      // const subcategoryIds = selectedMaterials.map((item) => item._id);
 
-      console.log("subcategoryIds", subcategoryIds);
+      // console.log("subcategoryIds", subcategoryIds);
 
-      if (subcategoryIds.length > 0) {
-        console.log("-----Enter it-----");
-        const result = await Subcategory.updateMany(
-          { _id: { $in: subcategoryIds } },
-          { $set: { is_used: true } }
-        );
-      }
+      // if (subcategoryIds.length > 0) {
+      //   console.log("-----Enter it-----");
+      //   const result = await Subcategory.updateMany(
+      //     { _id: { $in: subcategoryIds } },
+      //     { $set: { is_used: true } }
+      //   );
+      // }
 
       if (entry) {
         entry = await ProductionManager.findOneAndUpdate(
@@ -216,7 +226,7 @@ for (const roll of subcategoryMatches) {
             order_id,
             status: "pending",
             details: req.body,
-            subcategoryIds,
+            subcategoryIds: [],
             createdAt: new Date(),
             updatedAt: new Date(),
           }).save();
@@ -227,7 +237,7 @@ for (const roll of subcategoryMatches) {
             {
               $set: {
                 details: req.body,
-                subcategoryIds,
+                subcategoryIds: [],
                 updatedAt: new Date(),
               },
             }
@@ -241,7 +251,7 @@ for (const roll of subcategoryMatches) {
             order_id,
             status: "pending",
             details: req.body,
-            subcategoryIds,
+            subcategoryIds: [],
             createdAt: new Date(),
             updatedAt: new Date(),
           }).save();
@@ -252,7 +262,8 @@ for (const roll of subcategoryMatches) {
             {
               $set: {
                 details: req.body,
-                subcategoryIds,
+                // subcategoryIds,
+                subcategoryIds: [],
                 updatedAt: new Date(),
               },
             }
