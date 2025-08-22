@@ -11,6 +11,7 @@ const inventoryRouter = require("./routes/inventory.routes");
 const productionManagerRoutes = require("./routes/production/manager.routes");
 const dcutBagmaking = require("./routes/dcut/bagmaking.routes");
 const wcutBagmaking = require("./routes/wcut/bagmaking.routes");
+const driverRouter = require("./routes/driver.routes");
 const errorHandler = require("./middleware/errorHandler");
 const logger = require("./utils/logger");
 const path = require("path");
@@ -27,7 +28,7 @@ connectDB();
 const allowedOrigins = [
   "https://inventory01.vercel.app", // your Vercel frontend
   "http://localhost:3010",
-  "http://localhost:5173"
+  "http://localhost:5173",
 ];
 
 app.use(
@@ -44,7 +45,6 @@ app.use(
     allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
-
 
 // Handle preflight
 app.options("*", cors());
@@ -85,7 +85,7 @@ app.use("/api/production/manager", productionManagerRoutes);
 app.use("/api/inventory", inventoryRouter);
 app.use("/api/wcut", wcutBagmaking);
 app.use("/api/dcut", dcutBagmaking);
-
+app.use("/api/driver", driverRouter);
 // Error handling middleware
 app.use(errorHandler);
 
