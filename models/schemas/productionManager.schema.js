@@ -16,7 +16,7 @@ const productionDetailsSchema = new mongoose.Schema({
   },
   quantity_rolls: {
     type: Number,
-    required: true,
+    required: false,
     min: 0
   },
   remarks: {
