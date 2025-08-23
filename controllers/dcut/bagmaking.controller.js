@@ -299,17 +299,29 @@ class DcutBagmakingController {
           const leftoverQty = scannedQty - remainingQuantity;
 
           // create new roll with leftover
-          await Subcategory.create({
+          // await Subcategory.create({
+          //   fabricColor: matchedSubcategory.fabricColor,
+          //   rollSize: matchedSubcategory.rollSize,
+          //   gsm: matchedSubcategory.gsm,
+          //   fabricQuality: matchedSubcategory.fabricQuality,
+          //   quantity: leftoverQty, // leftover part
+          //   category: matchedSubcategory.category,
+          //   is_used: false,
+          //   status: "active",
+          //   createdAt: new Date(),
+          // });
+
+          const sub = new Subcategory({
             fabricColor: matchedSubcategory.fabricColor,
             rollSize: matchedSubcategory.rollSize,
             gsm: matchedSubcategory.gsm,
             fabricQuality: matchedSubcategory.fabricQuality,
-            quantity: leftoverQty, // leftover part
+            quantity: leftoverQty,
             category: matchedSubcategory.category,
             is_used: false,
             status: "active",
-            createdAt: new Date(),
           });
+          await sub.save();
 
           // mark original roll inactive
           await Subcategory.findByIdAndUpdate(matchedSubcategory._id, {
