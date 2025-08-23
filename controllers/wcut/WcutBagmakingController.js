@@ -2,6 +2,7 @@ const WcutBagmaking = require("../../models/WcutBagmaking");
 const ProductionManager = require("../../models/ProductionManager");
 const SalesOrder = require("../../models/SalesOrder");
 const Subcategory = require("../../models/subcategory");
+const SubCategory = require("../../models/schemas/subCategorySchema");
 const { ObjectId } = require("mongodb"); // Import ObjectId
 const emailHelper = require("../helpers/emailHelper");
 
@@ -318,7 +319,7 @@ class WcutBagmakingController {
           //   createdAt: new Date(),
           // });
 
-          const sub = new Subcategory({
+          const sub = new SubCategory({
             fabricColor: matchedSubcategory.fabricColor,
             rollSize: matchedSubcategory.rollSize,
             gsm: matchedSubcategory.gsm,
