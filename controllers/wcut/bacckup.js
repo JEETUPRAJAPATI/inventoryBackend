@@ -1149,6 +1149,7 @@ class WcutBagmakingController {
                 const subcategoryPlain = JSON.parse(JSON.stringify(subcategory));
                 return {
                     _id: subcategoryPlain._id,
+                    shortId: subcategoryPlain.shortId,
                     fabricColor: subcategoryPlain.fabricColor,
                     rollSize: subcategoryPlain.rollSize,
                     gsm: subcategoryPlain.gsm,
