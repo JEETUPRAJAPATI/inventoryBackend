@@ -1,14 +1,13 @@
-const Package = require('../../models/Package');
-const mongoose = require('mongoose');
-const logger = require('../../utils/logger');
-const SalesOrder = require('../../models/SalesOrder');
-const Delivery = require('../../models/Delivery');
-const ProductionManager = require('../../models/ProductionManager');
-const Flexo = require('../../models/Flexo');
-const WcutBagmaking = require('../../models/WcutBagmaking');
-const DcutBagmaking = require('../../models/DcutBagmaking');
-const Opsert = require('../../models/Opsert');
-
+const Package = require("../../models/Package");
+const mongoose = require("mongoose");
+const logger = require("../../utils/logger");
+const SalesOrder = require("../../models/SalesOrder");
+const Delivery = require("../../models/Delivery");
+const ProductionManager = require("../../models/ProductionManager");
+const Flexo = require("../../models/Flexo");
+const WcutBagmaking = require("../../models/WcutBagmaking");
+const DcutBagmaking = require("../../models/DcutBagmaking");
+const Opsert = require("../../models/Opsert");
 
 class PackageController {
   async create(req, res) {
@@ -16,10 +15,15 @@ class PackageController {
       const { order_id, package_details } = req.body;
 
       // Validate required fields
-      if (!order_id || !Array.isArray(package_details) || package_details.length === 0) {
+      if (
+        !order_id ||
+        !Array.isArray(package_details) ||
+        package_details.length === 0
+      ) {
         return res.status(400).json({
           success: false,
-          message: "order_id and package_details (non-empty array) are required."
+          message:
+            "order_id and package_details (non-empty array) are required.",
         });
       }
 
@@ -33,7 +37,8 @@ class PackageController {
         ) {
           return res.status(400).json({
             success: false,
-            message: "Each package detail must have numeric length, width, height, and weight."
+            message:
+              "Each package detail must have numeric length, width, height, and weight.",
           });
         }
       }
@@ -49,27 +54,27 @@ class PackageController {
 
         return res.status(200).json({
           success: true,
-          data: existingPackage
+          data: existingPackage,
         });
       } else {
         // If no package exists for the given order_id, create a new package
         const pkg = new Package({
           order_id,
-          package_details
+          package_details,
         });
 
         await pkg.save();
 
         return res.status(201).json({
           success: true,
-          data: pkg
+          data: pkg,
         });
       }
     } catch (error) {
-      logger.error('Error creating package:', error);
+      logger.error("Error creating package:", error);
       res.status(400).json({
         success: false,
-        message: error.message
+        message: error.message,
       });
     }
   }
@@ -78,12 +83,17 @@ class PackageController {
     try {
       const { order_id, package_details } = req.body;
 
-      console.log('req.body', req.body);
+      console.log("req.body", req.body);
       // Validate required fields
-      if (!order_id || !Array.isArray(package_details) || package_details.length === 0) {
+      if (
+        !order_id ||
+        !Array.isArray(package_details) ||
+        package_details.length === 0
+      ) {
         return res.status(400).json({
           success: false,
-          message: "order_id and package_details (non-empty array) are required."
+          message:
+            "order_id and package_details (non-empty array) are required.",
         });
       }
 
@@ -92,32 +102,40 @@ class PackageController {
         if (typeof pkg.weight !== "number") {
           return res.status(400).json({
             success: false,
-            message: "Each package detail must have a numeric weight."
+            message: "Each package detail must have a numeric weight.",
           });
         }
 
         // Optional fields can be undefined or null, or numbers
         if (
-          (pkg.length !== undefined && pkg.length !== null && typeof pkg.length !== "number") ||
-          (pkg.width !== undefined && pkg.width !== null && typeof pkg.width !== "number") ||
-          (pkg.height !== undefined && pkg.height !== null && typeof pkg.height !== "number")
+          (pkg.length !== undefined &&
+            pkg.length !== null &&
+            typeof pkg.length !== "number") ||
+          (pkg.width !== undefined &&
+            pkg.width !== null &&
+            typeof pkg.width !== "number") ||
+          (pkg.height !== undefined &&
+            pkg.height !== null &&
+            typeof pkg.height !== "number")
         ) {
           return res.status(400).json({
             success: false,
-            message: "Optional fields (length, width, height) must be numbers, null, or undefined."
+            message:
+              "Optional fields (length, width, height) must be numbers, null, or undefined.",
           });
         }
       }
 
-      // ✅ Step 1: Fetch the order to get total quantity
+      // ✅ Step 1: Fetch the order
       const order = await SalesOrder.findOne({ orderId: order_id });
 
       if (!order) {
         return res.status(404).json({
           success: false,
-          message: "Order not found."
+          message: "Order not found.",
         });
       }
+
       const totalQuantity = order.quantity;
 
       // ✅ Step 2: Get existing package weight (if any)
@@ -125,23 +143,28 @@ class PackageController {
       let existingWeight = 0;
 
       if (existingPackage && Array.isArray(existingPackage.package_details)) {
-        existingWeight = existingPackage.package_details.reduce((sum, pkg) => sum + (pkg.weight || 0), 0);
+        existingWeight = existingPackage.package_details.reduce(
+          (sum, pkg) => sum + (pkg.weight || 0),
+          0
+        );
       }
 
       // ✅ Step 3: Sum new incoming weights
-      const newWeight = package_details.reduce((sum, pkg) => sum + pkg.weight, 0);
+      const newWeight = package_details.reduce(
+        (sum, pkg) => sum + pkg.weight,
+        0
+      );
 
-      // ✅ Step 4: Check if total weight exceeds quantity + 10
-      const allowedLimit = totalQuantity + 10;
+      // ✅ Step 4: Allowed limit = quantity + 5%
+      const allowedLimit = totalQuantity * 1.05; // 105% of quantity
       const totalWeightAfterAdd = existingWeight + newWeight;
 
       if (totalWeightAfterAdd > allowedLimit) {
         return res.status(400).json({
           success: false,
-          message: `Total weight after adding (${totalWeightAfterAdd}) exceeds allowed limit (${allowedLimit}).`
+          message: `Total weight after adding (${totalWeightAfterAdd}) exceeds allowed limit (${allowedLimit}).`,
         });
       }
-
 
       if (existingPackage) {
         // Append new package_details to the existing package
@@ -152,12 +175,12 @@ class PackageController {
         return res.status(200).json({
           success: true,
           message: "Package details updated successfully.",
-          data: existingPackage
+          data: existingPackage,
         });
       } else {
         return res.status(404).json({
           success: false,
-          message: "Order ID not found. Cannot add package details."
+          message: "Order ID not found. Cannot add package details.",
         });
       }
     } catch (error) {
@@ -165,18 +188,26 @@ class PackageController {
       res.status(500).json({
         success: false,
         message: "Failed to update package details.",
-        error: error.message
+        error: error.message,
       });
     }
   }
 
   async getOrders(req, res) {
     try {
-      const orders = await Package.find().sort({ _id: -1 }).select('status _id order_id package_details');
+      const orders = await Package.find()
+        .sort({ _id: -1 })
+        .select("status _id order_id package_details");
       const ordersWithPackages = await Promise.all(
         orders.map(async (packageItem) => {
-          const order = await SalesOrder.findOne({ orderId: packageItem.order_id }); // Fetch the corresponding order
-          const totalWeight = packageItem.package_details?.reduce((sum, pkg) => sum + pkg.weight, 0) || 0;
+          const order = await SalesOrder.findOne({
+            orderId: packageItem.order_id,
+          }); // Fetch the corresponding order
+          const totalWeight =
+            packageItem.package_details?.reduce(
+              (sum, pkg) => sum + pkg.weight,
+              0
+            ) || 0;
           return {
             ...packageItem.toObject(),
             order,
@@ -190,15 +221,13 @@ class PackageController {
         data: ordersWithPackages,
       });
     } catch (error) {
-      logger.error('Error in getOrders controller:', error);
+      logger.error("Error in getOrders controller:", error);
       res.status(500).json({
         success: false,
         message: error.message,
       });
     }
   }
-
-
 
   async updatePackageStatus(req, res) {
     try {
@@ -210,7 +239,7 @@ class PackageController {
         _id: id,
       });
 
-      console.log('packageToUpdate', packageToUpdate);
+      console.log("packageToUpdate", packageToUpdate);
       if (!packageToUpdate) {
         return res.status(404).json({ message: "Package not found" });
       }
@@ -221,25 +250,27 @@ class PackageController {
 
       // If the status is "delivered", check the Delivery table
       if (status === "delivery") {
-
-        const updatedProductionManager = await ProductionManager.findOneAndUpdate(
-          { order_id: packageToUpdate.order_id },
-          {
-            $set: { "production_details.progress": "Delivery Pending" }
-          },
-          { new: true }
-        );
+        const updatedProductionManager =
+          await ProductionManager.findOneAndUpdate(
+            { order_id: packageToUpdate.order_id },
+            {
+              $set: { "production_details.progress": "Delivery Pending" },
+            },
+            { new: true }
+          );
 
         if (!updatedProductionManager) {
           return res.status(404).json({
             success: false,
-            message: `No Production Manager record found for orderId: ${orderId}`
+            message: `No Production Manager record found for orderId: ${orderId}`,
           });
         }
 
         console.log("✅ ProductionManager Updated:", updatedProductionManager);
 
-        const existingDelivery = await Delivery.findOne({ orderId: packageToUpdate.order_id });
+        const existingDelivery = await Delivery.findOne({
+          orderId: packageToUpdate.order_id,
+        });
 
         if (existingDelivery) {
           // Update status if delivery entry already exists
@@ -249,29 +280,31 @@ class PackageController {
           // Create new entry if it doesn't exist
           await Delivery.create({
             orderId: packageToUpdate.order_id,
-            status: "pending"
+            status: "pending",
           });
         }
       }
-      return res.status(200).json({ message: "Package status updated", package: packageToUpdate });
+      return res
+        .status(200)
+        .json({ message: "Package status updated", package: packageToUpdate });
     } catch (error) {
       return res.status(500).json({ message: error.message });
     }
-
   }
-
 
   async getByOrderId(req, res) {
     try {
-      console.log('Listing data for Order ID:', req.params.orderId);
+      console.log("Listing data for Order ID:", req.params.orderId);
 
       // Find the sales order with the given orderId
-      const salesOrder = await SalesOrder.findOne({ orderId: req.params.orderId });
+      const salesOrder = await SalesOrder.findOne({
+        orderId: req.params.orderId,
+      });
 
       if (!salesOrder) {
         return res.status(404).json({
           success: false,
-          message: 'Sales order not found'
+          message: "Sales order not found",
         });
       }
 
@@ -281,7 +314,7 @@ class PackageController {
       if (!packages || packages.length === 0) {
         return res.status(404).json({
           success: false,
-          message: 'No packages found for this order'
+          message: "No packages found for this order",
         });
       }
 
@@ -302,27 +335,36 @@ class PackageController {
 
       if (salesOrder?.bagDetails?.type === "w_cut_box_bag") {
         const flexoData = await Flexo.findOne({ order_id: salesOrder.orderId });
-        const wcutData = await WcutBagmaking.findOne({ order_id: salesOrder.orderId });
+        const wcutData = await WcutBagmaking.findOne({
+          order_id: salesOrder.orderId,
+        });
 
         flexoUnitNumber = flexoData?.unit_number || "N/A";
         wcutUnitNumber = wcutData?.unit_number || "N/A";
-
       } else if (salesOrder?.bagDetails?.type === "d_cut_loop_handle") {
-        const dcutData = await DcutBagmaking.findOne({ order_id: salesOrder.orderId });
-        const opsertData = await Opsert.findOne({ order_id: salesOrder.orderId });
+        const dcutData = await DcutBagmaking.findOne({
+          order_id: salesOrder.orderId,
+        });
+        const opsertData = await Opsert.findOne({
+          order_id: salesOrder.orderId,
+        });
 
         dcutUnitNumber = dcutData?.unit_number || "N/A";
         opsertUnitNumber = opsertData?.unit_number || "N/A";
       }
 
       // Process packages and calculate total weight
-      const ordersWithPackages = packages.map(packageItem => {
-        const packageWeight = packageItem.package_details?.reduce((sum, pkg) => sum + pkg.weight, 0) || 0;
+      const ordersWithPackages = packages.map((packageItem) => {
+        const packageWeight =
+          packageItem.package_details?.reduce(
+            (sum, pkg) => sum + pkg.weight,
+            0
+          ) || 0;
         totalWeight += packageWeight;
         return packageItem.toObject();
       });
 
-      console.log('Package listing:', ordersWithPackages);
+      console.log("Package listing:", ordersWithPackages);
       res.json({
         success: true,
         salesOrder,
@@ -332,15 +374,14 @@ class PackageController {
           flexo: flexoUnitNumber,
           wcut: wcutUnitNumber,
           dcut: dcutUnitNumber,
-          opsert: opsertUnitNumber
-        }
+          opsert: opsertUnitNumber,
+        },
       });
-
     } catch (error) {
-      console.error('Error getting packages by order ID:', error);
+      console.error("Error getting packages by order ID:", error);
       res.status(500).json({
         success: false,
-        message: error.message
+        message: error.message,
       });
     }
   }
@@ -353,13 +394,13 @@ class PackageController {
       // Find the package document by order ID
       const pkg = await Package.findOne({
         order_id: orderId,
-        'package_details._id': packageId
+        "package_details._id": packageId,
       });
 
       if (!pkg) {
         return res.status(404).json({
           success: false,
-          message: 'Package not found for this order'
+          message: "Package not found for this order",
         });
       }
 
@@ -368,7 +409,7 @@ class PackageController {
       if (!packageDetail) {
         return res.status(404).json({
           success: false,
-          message: 'Package ID not found in this order'
+          message: "Package ID not found in this order",
         });
       }
 
@@ -380,13 +421,13 @@ class PackageController {
 
       res.json({
         success: true,
-        data: pkg
+        data: pkg,
       });
     } catch (error) {
-      logger.error('Error updating package:', error);
+      logger.error("Error updating package:", error);
       res.status(400).json({
         success: false,
-        message: error.message
+        message: error.message,
       });
     }
   }
