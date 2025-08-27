@@ -138,15 +138,14 @@ class WcutBagmakingController {
       // Extract correct fields
       const { color: FabricColor } = salesOrder.bagDetails;
       const { fabricQuality } = salesOrder;
-      const { quantity_kgs, remaining_quantity } = productionRecord.production_details;
+      const { quantity_kgs, remaining_quantity } =
+        productionRecord.production_details;
 
       console.log("Sales Order - Fabric Color:", FabricColor);
       console.log("Sales Order - GSM:", gsm);
       console.log("Sales Order - Fabric Quality:", fabricQuality);
       console.log("Sales Order - rollSize:", rollSize);
       console.log("Production Record - quantity_kgs:", quantity_kgs);
-
-
 
       // Fetch subcategory IDs from Flexo
       const existingRecord = await Subcategory.find({
@@ -156,7 +155,7 @@ class WcutBagmakingController {
         status: "active",
       });
 
-      console.log('existingRecord', existingRecord);
+      console.log("existingRecord", existingRecord);
       // return false;
 
       // if (
@@ -189,7 +188,7 @@ class WcutBagmakingController {
         });
       }
 
-      console.log('matchedSubcategory', matchedSubcategory);
+      console.log("matchedSubcategory", matchedSubcategory);
 
       // 3️⃣ Check if the scanned subcategory ID exists inside this order's subcategories
       // if (!existingRecord.subcategoryIds.includes(id)) {
@@ -206,7 +205,8 @@ class WcutBagmakingController {
       if (!isValid) {
         return res.status(400).json({
           success: false,
-          message: "Invalid QR code. Subcategory does not belong to this order.",
+          message:
+            "Invalid QR code. Subcategory does not belong to this order.",
         });
       }
       if (id !== materialId) {
@@ -262,7 +262,9 @@ class WcutBagmakingController {
             message: "No active subcategories available.",
           });
 
-        console.log("---------------------------------------------------------");
+        console.log(
+          "---------------------------------------------------------"
+        );
 
         console.log("remainingQuantity", remaining_quantity);
         console.log("activeSubcategories.length ", activeSubcategories.length);
@@ -285,9 +287,9 @@ class WcutBagmakingController {
           "---------------------------------------------------------"
         );
 
-
         // calculate how much is still required
-        let remainingQuantity = productionRecord.production_details.remaining_quantity;
+        let remainingQuantity =
+          productionRecord.production_details.remaining_quantity;
 
         console.log("remainingQuantity", remainingQuantity);
         // how much is in scanned roll
@@ -301,7 +303,6 @@ class WcutBagmakingController {
           await Subcategory.findByIdAndUpdate(matchedSubcategory._id, {
             status: "inactive",
           });
-
         } else {
           // Case 2: Roll is larger than remaining qty (overshoot)
           const leftoverQty = scannedQty - remainingQuantity;
@@ -1116,7 +1117,6 @@ class WcutBagmakingController {
       // Fetch sales record
       // Fetch matching subcategory records
 
-
       const salesRecord = await SalesOrder.findOne({ orderId: orderId });
       if (!salesRecord) {
         return res
@@ -1137,7 +1137,8 @@ class WcutBagmakingController {
       const { fabricQuality } = salesRecord;
       const { color: fabricColor, gsm } = salesRecord.bagDetails;
 
-      const { remaining_quantity, roll_size } = productionRecord.production_details;
+      const { remaining_quantity, roll_size } =
+        productionRecord.production_details;
       console.log("-----------------------------------------------");
       console.log("Matched Subcategory - fabricQuality:", fabricQuality);
       console.log("Matched Subcategory - Fabric Color:", fabricColor);
@@ -1153,7 +1154,6 @@ class WcutBagmakingController {
         is_used: false,
       });
 
-
       // const subcategoryMatches = await Subcategory.find({
       //   _id: { $in: subcategoryIds }, // Filter by the subcategory IDs from Flexo
       //   // status: 'active'
@@ -1168,7 +1168,6 @@ class WcutBagmakingController {
           message: "No Raw Material found for this order",
         });
       }
-
 
       // Calculate total quantity from subcategories
       // let totalQuantity = subcategoryMatches.reduce((sum, subcategory) => sum + (subcategory.quantity || 0), 0);
