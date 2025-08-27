@@ -1,57 +1,60 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
 const purchaseOrderSchema = new mongoose.Schema({
   supplier: {
     type: String,
-    required: true
+    required: true,
   },
   quantity: {
     type: Number,
     required: true,
-    min: 0
+    min: 0,
+    set: (v) => parseFloat(v.toFixed(2)), // ensures 2 decimals
   },
   unitPrice: {
     type: Number,
     required: true,
-    min: 0
+    min: 0,
+    set: (v) => parseFloat(v.toFixed(2)), // ensures 2 decimals
   },
   totalAmount: {
     type: Number,
     required: true,
-    min: 0
+    min: 0,
+    set: (v) => parseFloat(v.toFixed(2)), // ensures 2 decimals
   },
   deliveryDate: {
     type: Date,
-    required: true
+    required: true,
   },
   status: {
     type: String,
-    enum: ['pending', 'approved', 'ordered', 'received', 'cancelled'],
-    default: 'Pending'
+    enum: ["pending", "approved", "ordered", "received", "cancelled"],
+    default: "Pending",
   },
   notes: {
     type: String,
-    required: true
+    required: true,
   },
   order_number: {
     type: String,
-    required: true
+    required: true,
   },
   materialType: {
     type: String,
-    required: true
+    required: true,
   },
   createdAt: {
     type: Date,
-    default: Date.now
+    default: Date.now,
   },
   updatedAt: {
     type: Date,
-    default: Date.now
-  }
+    default: Date.now,
+  },
 });
 
-purchaseOrderSchema.pre('save', function (next) {
+purchaseOrderSchema.pre("save", function (next) {
   this.updatedAt = new Date();
   next();
 });

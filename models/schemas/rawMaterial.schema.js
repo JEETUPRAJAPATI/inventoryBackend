@@ -26,6 +26,7 @@ const rawMaterialSchema = new mongoose.Schema({
     type: Number,
     required: false,
     min: 0,
+    set: (v) => parseFloat(v.toFixed(2)), // ensures 2 decimals
   },
   subCategories: [
     {

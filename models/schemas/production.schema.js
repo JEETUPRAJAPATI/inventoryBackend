@@ -1,46 +1,47 @@
-const mongoose = require('mongoose');
-const { BAG_TYPES, OPERATOR_TYPES } = require('../../config/constants');
+const mongoose = require("mongoose");
+const { BAG_TYPES, OPERATOR_TYPES } = require("../../config/constants");
 
 const productionSchema = new mongoose.Schema({
   bagType: {
     type: String,
     enum: Object.values(BAG_TYPES),
-    required: true
+    required: true,
   },
   operatorType: {
     type: String,
     enum: Object.values(OPERATOR_TYPES),
-    required: true
+    required: true,
   },
   operatorName: {
     type: String,
-    required: true
+    required: true,
   },
   quantity: {
     type: Number,
     required: true,
-    min: 0
+    min: 0,
+    set: (v) => parseFloat(v.toFixed(2)), // ensures 2 decimals
   },
   status: {
     type: String,
-    enum: ['pending', 'in_progress', 'completed'],
-    default: 'pending'
+    enum: ["pending", "in_progress", "completed"],
+    default: "pending",
   },
   productionDate: {
     type: Date,
-    default: Date.now
+    default: Date.now,
   },
   createdAt: {
     type: Date,
-    default: Date.now
+    default: Date.now,
   },
   updatedAt: {
     type: Date,
-    default: Date.now
-  }
+    default: Date.now,
+  },
 });
 
-productionSchema.pre('save', function (next) {
+productionSchema.pre("save", function (next) {
   this.updatedAt = new Date();
   next();
 });
