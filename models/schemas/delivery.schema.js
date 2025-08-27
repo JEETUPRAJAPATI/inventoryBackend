@@ -1,92 +1,93 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
 const deliverySchema = new mongoose.Schema({
   orderId: {
     type: String,
     required: true,
-    unique: true
+    unique: true,
   },
   customerName: {
     type: String,
     required: false,
-    trim: true
+    trim: true,
   },
   email: {
     type: String,
     required: false,
     trim: true,
-    lowercase: true
+    lowercase: true,
   },
   mobileNumber: {
     type: String,
-    required: false
+    required: false,
   },
   address: {
     type: String,
     required: false,
-    trim: true
+    trim: true,
   },
   bagDetails: {
     type: {
       type: String,
-      required: false
+      required: false,
     },
     handleColor: String,
     size: {
       type: String,
-      required: false
+      required: false,
     },
     color: String,
     printColor: String,
     gsm: {
       type: Number,
-      required: false
-    }
+      required: false,
+    },
   },
   jobName: {
     type: String,
-    required: false
+    required: false,
   },
   fabricQuality: {
     type: String,
-    required: false
+    required: false,
   },
   quantity: {
     type: Number,
     required: false,
-    min: 1
+    min: 1,
+    set: (v) => parseFloat(v.toFixed(2)), // ensures 2 decimals
   },
   deliveryDate: {
     type: Date,
-    required: false
+    required: false,
   },
   vehicleNo: String,
   driverName: String,
   driverContact: String,
   notes: {
     type: String,
-    trim: false
+    trim: false,
   },
   status: {
     type: String,
-    enum: ['pending', 'in_transit', 'delivered', 'cancelled', 'done'],
-    default: 'pending'
+    enum: ["pending", "in_transit", "delivered", "cancelled", "done"],
+    default: "pending",
   },
   isDeleted: {
     type: Boolean,
-    default: false
+    default: false,
   },
   createdAt: {
     type: Date,
-    default: Date.now
+    default: Date.now,
   },
   updatedAt: {
     type: Date,
-    default: Date.now
-  }
+    default: Date.now,
+  },
 });
 
-deliverySchema.pre('save', function (next) {
+deliverySchema.pre("save", function (next) {
   this.updatedAt = new Date();
   next();
 });

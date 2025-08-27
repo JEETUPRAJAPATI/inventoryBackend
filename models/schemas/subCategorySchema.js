@@ -3,7 +3,7 @@ const mongoose = require("mongoose");
 // Counter schema to track incremental numbers
 const counterSchema = new mongoose.Schema({
   name: { type: String, required: true, unique: true },
-  seq: { type: Number, default: 0 }
+  seq: { type: Number, default: 0 },
 });
 
 const Counter = mongoose.model("Counter", counterSchema);
@@ -12,7 +12,7 @@ const SubCategorySchema = new mongoose.Schema(
   {
     shortId: {
       type: String,
-      unique: true
+      unique: true,
     },
     fabricColor: {
       type: String,
@@ -37,6 +37,7 @@ const SubCategorySchema = new mongoose.Schema(
     quantity: {
       type: Number,
       required: [true, "Quantity is required"],
+      set: (v) => parseFloat(v.toFixed(2)), // ensures 2 decimals
     },
     category: {
       type: mongoose.Schema.Types.ObjectId,

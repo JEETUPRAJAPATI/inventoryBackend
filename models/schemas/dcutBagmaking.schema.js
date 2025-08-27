@@ -1,10 +1,10 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
 const dcutBagmakingSchema = new mongoose.Schema({
   order_id: {
     type: String,
     required: true,
-    trim: true
+    trim: true,
   },
   unit_number: {
     type: String,
@@ -12,37 +12,45 @@ const dcutBagmakingSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ['pending', 'in_progress', 'completed', 'billing', 'opsert', 'delivered'],
-    default: 'pending'
+    enum: [
+      "pending",
+      "in_progress",
+      "completed",
+      "billing",
+      "opsert",
+      "delivered",
+    ],
+    default: "pending",
   },
   remarks: {
     type: String,
     trim: true,
-    required: false
+    required: false,
   },
   subcategoryIds: [
     {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'Subcategory',
-      required: true
-    }
+      ref: "Subcategory",
+      required: true,
+    },
   ],
   scrapQuantity: {
     type: Number,
     default: 0,
-    min: 0
+    min: 0,
+    set: (v) => parseFloat(v.toFixed(2)), // ensures 2 decimals
   },
   createdAt: {
     type: Date,
-    default: Date.now
+    default: Date.now,
   },
   updatedAt: {
     type: Date,
-    default: Date.now
-  }
+    default: Date.now,
+  },
 });
 
-dcutBagmakingSchema.pre('save', function (next) {
+dcutBagmakingSchema.pre("save", function (next) {
   this.updatedAt = new Date();
   next();
 });

@@ -1,54 +1,59 @@
-const mongoose = require('mongoose');
-const Joi = require('joi');  // Optional, if you want to use Joi for validation
+const mongoose = require("mongoose");
+const Joi = require("joi"); // Optional, if you want to use Joi for validation
 
 const FinishedProductSchema = new mongoose.Schema(
   {
     name: {
       type: String,
       required: true,
-      trim: true
+      trim: true,
     },
     category: {
       type: String,
       required: true,
-      trim: true
+      trim: true,
     },
     quantity: {
       type: Number,
       required: true,
-      min: 1
+      min: 1,
+      set: (v) => parseFloat(v.toFixed(2)), // ensures 2 decimals
     },
     size: {
       type: String,
-      enum: ['S', 'M', 'L', 'XL', 'XXL'],  // Modify sizes as necessary
-      required: true
+      enum: ["S", "M", "L", "XL", "XXL"], // Modify sizes as necessary
+      required: true,
     },
     color: {
       type: String,
-      required: true
+      required: true,
     },
     price: {
       type: Number,
       required: true,
-      min: 0
+      min: 0,
+      set: (v) => parseFloat(v.toFixed(2)), // ensures 2 decimals
     },
     status: {
       type: String,
-      enum: ['available', 'out_of_stock', 'discontinued'],  // Modify status options as necessary
-      required: true
+      enum: ["available", "out_of_stock", "discontinued"], // Modify status options as necessary
+      required: true,
     },
     created: {
       type: Date,
-      default: Date.now
+      default: Date.now,
     },
     updated: {
       type: Date,
-      default: Date.now
-    }
+      default: Date.now,
+    },
   },
-  { timestamps: true }  // Automatically manages createdAt and updatedAt
+  { timestamps: true } // Automatically manages createdAt and updatedAt
 );
 
-const FinishedProduct = mongoose.model('FinishedProduct', FinishedProductSchema);
+const FinishedProduct = mongoose.model(
+  "FinishedProduct",
+  FinishedProductSchema
+);
 
 module.exports = FinishedProduct;

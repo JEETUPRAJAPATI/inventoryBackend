@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
 const wcutBagmakingSchema = new mongoose.Schema({
   order_id: {
@@ -24,42 +24,44 @@ const wcutBagmakingSchema = new mongoose.Schema({
   jobName: {
     type: String,
     required: false,
-    trim: true
+    trim: true,
   },
   bagType: {
     type: String,
     required: false,
-    trim: true
+    trim: true,
   },
   operatorName: {
     type: String,
-    required: false
+    required: false,
   },
   quantity: {
     type: Number,
     required: false,
-    min: 0
+    min: 0,
+    set: (v) => parseFloat(v.toFixed(2)), // ensures 2 decimals
   },
   remarks: {
     type: String,
-    trim: false
+    trim: false,
   },
   scrapQuantity: {
     type: Number,
     required: false,
-    min: 0
+    min: 0,
+    set: (v) => parseFloat(v.toFixed(2)), // ensures 2 decimals
   },
   createdAt: {
     type: Date,
-    default: Date.now
+    default: Date.now,
   },
   updatedAt: {
     type: Date,
-    default: Date.now
-  }
+    default: Date.now,
+  },
 });
 
-wcutBagmakingSchema.pre('save', function (next) {
+wcutBagmakingSchema.pre("save", function (next) {
   this.updatedAt = new Date();
   next();
 });
