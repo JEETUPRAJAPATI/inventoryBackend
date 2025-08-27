@@ -65,6 +65,7 @@ class DeliveryCommandController {
       //     message: 'Cannot update delivery. Driver contact, driver name, and vehicle number must be provided.'
       //   });
       // }
+
       // Proceed with the update if all required fields exist
       const updatedDelivery = await Delivery.findOneAndUpdate(
         { _id: req.params.id }, // Find by ID

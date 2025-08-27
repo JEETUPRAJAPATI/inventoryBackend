@@ -6,7 +6,7 @@ class PurchaseOrderController {
     try {
       const order = new PurchaseOrder(req.body);
       await order.save();
-      
+
       res.status(201).json({
         success: true,
         data: order

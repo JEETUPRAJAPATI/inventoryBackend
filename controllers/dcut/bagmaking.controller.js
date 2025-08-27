@@ -1,6 +1,7 @@
 const ProductionManager = require("../../models/ProductionManager");
 const SalesOrder = require("../../models/SalesOrder");
 const Subcategory = require("../../models/subcategory");
+const SubCategory = require("../../models/schemas/subCategorySchema");
 const logger = require("../../utils/logger");
 const Opsert = require("../../models/Opsert");
 const DcutBagmaking = require("../../models/DcutBagmaking");
@@ -292,17 +293,29 @@ class DcutBagmakingController {
           const leftoverQty = scannedQty - remainingQuantity;
 
           // create new roll with leftover
-          await Subcategory.create({
+          // await Subcategory.create({
+          //   fabricColor: matchedSubcategory.fabricColor,
+          //   rollSize: matchedSubcategory.rollSize,
+          //   gsm: matchedSubcategory.gsm,
+          //   fabricQuality: matchedSubcategory.fabricQuality,
+          //   quantity: leftoverQty, // leftover part
+          //   category: matchedSubcategory.category,
+          //   is_used: false,
+          //   status: "active",
+          //   createdAt: new Date(),
+          // });
+
+          const sub = new SubCategory({
             fabricColor: matchedSubcategory.fabricColor,
             rollSize: matchedSubcategory.rollSize,
             gsm: matchedSubcategory.gsm,
             fabricQuality: matchedSubcategory.fabricQuality,
-            quantity: leftoverQty, // leftover part
+            quantity: leftoverQty,
             category: matchedSubcategory.category,
             is_used: false,
             status: "active",
-            createdAt: new Date(),
           });
+          await sub.save();
 
           // mark original roll inactive
           await Subcategory.findByIdAndUpdate(matchedSubcategory._id, {
@@ -742,9 +755,11 @@ class DcutBagmakingController {
   async getRecordsByType(req, res) {
     try {
       // Fetch all reports where type is 'w_cut_flexo'
+
       const reports = await Report.find({ type: "d_cut_bag_making" }).sort({
         createdAt: -1,
       });
+
 
       // Fetch related sales orders and merge data
       const result = await Promise.all(
@@ -776,9 +791,11 @@ class DcutBagmakingController {
   async getRecordsBagmakingByType(req, res) {
     try {
       // Fetch all reports where type is 'w_cut_flexo'
+
       const reports = await Report.find({ type: "d_cut_opsert" }).sort({
         createdAt: -1,
       });
+
 
       // Fetch related sales orders and merge data
       const result = await Promise.all(
@@ -975,6 +992,7 @@ class DcutBagmakingController {
         const subcategoryPlain = JSON.parse(JSON.stringify(subcategory));
         return {
           _id: subcategoryPlain._id,
+          shortId: subcategoryPlain.shortId,
           fabricColor: subcategoryPlain.fabricColor,
           rollSize: subcategoryPlain.rollSize,
           gsm: subcategoryPlain.gsm,

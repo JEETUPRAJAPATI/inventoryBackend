@@ -36,7 +36,7 @@ const SubcategorySchema = new mongoose.Schema(
             type: Boolean,
             default: false,
         },
-      
+
     },
     { timestamps: true } // Adds createdAt and updatedAt
 );

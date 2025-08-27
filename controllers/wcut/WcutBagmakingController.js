@@ -2,6 +2,7 @@ const WcutBagmaking = require("../../models/WcutBagmaking");
 const ProductionManager = require("../../models/ProductionManager");
 const SalesOrder = require("../../models/SalesOrder");
 const Subcategory = require("../../models/subcategory");
+const SubCategory = require("../../models/schemas/subCategorySchema");
 const { ObjectId } = require("mongodb"); // Import ObjectId
 const emailHelper = require("../helpers/emailHelper");
 
@@ -307,18 +308,29 @@ class WcutBagmakingController {
           const leftoverQty = scannedQty - remainingQuantity;
 
           // create new roll with leftover
-          await Subcategory.create({
+          // await Subcategory.create({
+          //   fabricColor: matchedSubcategory.fabricColor,
+          //   rollSize: matchedSubcategory.rollSize,
+          //   gsm: matchedSubcategory.gsm,
+          //   fabricQuality: matchedSubcategory.fabricQuality,
+          //   quantity: leftoverQty, // leftover part
+          //   category: matchedSubcategory.category,
+          //   is_used: false,
+          //   status: "active",
+          //   createdAt: new Date(),
+          // });
+
+          const sub = new SubCategory({
             fabricColor: matchedSubcategory.fabricColor,
             rollSize: matchedSubcategory.rollSize,
             gsm: matchedSubcategory.gsm,
             fabricQuality: matchedSubcategory.fabricQuality,
-            quantity: leftoverQty, // leftover part
+            quantity: leftoverQty,
             category: matchedSubcategory.category,
             is_used: false,
             status: "active",
-            createdAt: new Date(),
           });
-
+          await sub.save();
           // mark original roll inactive
           await Subcategory.findByIdAndUpdate(matchedSubcategory._id, {
             status: "inactive",
@@ -1166,6 +1178,7 @@ class WcutBagmakingController {
         const subcategoryPlain = JSON.parse(JSON.stringify(subcategory));
         return {
           _id: subcategoryPlain._id,
+          shortId: subcategoryPlain.shortId,
           fabricColor: subcategoryPlain.fabricColor,
           rollSize: subcategoryPlain.rollSize,
           gsm: subcategoryPlain.gsm,
