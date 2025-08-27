@@ -167,7 +167,6 @@ class DcutBagmakingController {
         status: "active",
       });
 
-
       // const subcategoryIds = existingRecord.subcategoryIds;
       const subcategoryIds = existingRecord.map((doc) => doc._id);
 
@@ -185,12 +184,10 @@ class DcutBagmakingController {
       console.log("qr code id :", id);
 
       if (!matchedSubcategory) {
-        return res
-          .status(400)
-          .json({
-            success: false,
-            message: "Invalid QR code. No matching subcategory found.",
-          });
+        return res.status(400).json({
+          success: false,
+          message: "Invalid QR code. No matching subcategory found.",
+        });
       }
       // 3️⃣ Check if the scanned subcategory ID exists inside this order's subcategories
       // if (!existingRecord.subcategoryIds.includes(id)) {
@@ -209,17 +206,16 @@ class DcutBagmakingController {
       if (!isValid) {
         return res.status(400).json({
           success: false,
-          message: "Invalid QR code. Subcategory does not belong to this order.",
+          message:
+            "Invalid QR code. Subcategory does not belong to this order.",
         });
       }
       if (id !== materialId) {
-        return res
-          .status(400)
-          .json({
-            success: false,
-            message:
-              "Wrong QR code selected. Material does not match the expected quantity.",
-          });
+        return res.status(400).json({
+          success: false,
+          message:
+            "Wrong QR code selected. Material does not match the expected quantity.",
+        });
       }
 
       console.log("-----------------------------------------------");
@@ -257,12 +253,10 @@ class DcutBagmakingController {
           status: "active",
         });
         if (!activeSubcategories.length)
-          return res
-            .status(400)
-            .json({
-              success: false,
-              message: "No active subcategories available.",
-            });
+          return res.status(400).json({
+            success: false,
+            message: "No active subcategories available.",
+          });
 
         console.log(
           "---------------------------------------------------------"
@@ -278,9 +272,9 @@ class DcutBagmakingController {
 
         console.log("matchedSubcategory._id", matchedSubcategory._id);
 
-
         // calculate how much is still required
-        let remainingQuantity = productionRecord.production_details.remaining_quantity;
+        let remainingQuantity =
+          productionRecord.production_details.remaining_quantity;
 
         console.log("remainingQuantity", remainingQuantity);
         // how much is in scanned roll
@@ -294,7 +288,6 @@ class DcutBagmakingController {
           await Subcategory.findByIdAndUpdate(matchedSubcategory._id, {
             status: "inactive",
           });
-
         } else {
           // Case 2: Roll is larger than remaining qty (overshoot)
           const leftoverQty = scannedQty - remainingQuantity;
@@ -762,7 +755,11 @@ class DcutBagmakingController {
   async getRecordsByType(req, res) {
     try {
       // Fetch all reports where type is 'w_cut_flexo'
-      const reports = await Report.find({ type: "d_cut_bag_making" }).sort({ createdAt: -1 });
+
+      const reports = await Report.find({ type: "d_cut_bag_making" }).sort({
+        createdAt: -1,
+      });
+
 
       // Fetch related sales orders and merge data
       const result = await Promise.all(
@@ -784,7 +781,7 @@ class DcutBagmakingController {
         })
       );
       console.log("result is ", result);
-      res.status(200).json({ success: true, data: result });
+      res.status(200).json({ success: true, data: result, debugger: true });
     } catch (error) {
       console.error(error);
       res.status(500).json({ message: "Error fetching records", error });
@@ -794,7 +791,11 @@ class DcutBagmakingController {
   async getRecordsBagmakingByType(req, res) {
     try {
       // Fetch all reports where type is 'w_cut_flexo'
-      const reports = await Report.find({ type: "d_cut_opsert" }).sort({ createdAt: -1 });
+
+      const reports = await Report.find({ type: "d_cut_opsert" }).sort({
+        createdAt: -1,
+      });
+
 
       // Fetch related sales orders and merge data
       const result = await Promise.all(
@@ -938,7 +939,6 @@ class DcutBagmakingController {
       //   // status: 'active'
       // });
 
-
       const salesRecord = await SalesOrder.findOne({ orderId: orderId });
       if (!salesRecord) {
         return res
@@ -959,11 +959,11 @@ class DcutBagmakingController {
       const { fabricQuality } = salesRecord;
       const { color: fabricColor, gsm } = salesRecord.bagDetails;
 
-      const { remaining_quantity, roll_size } = productionRecord.production_details;
+      const { remaining_quantity, roll_size } =
+        productionRecord.production_details;
 
       // Calculate total quantity from subcategories
       // let totalQuantity = subcategoryMatches.reduce((sum, subcategory) => sum + (subcategory.quantity || 0), 0);
-
 
       let subcategoryMatches = await Subcategory.find({
         fabricColor,
