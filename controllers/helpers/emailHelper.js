@@ -1,56 +1,58 @@
 const nodemailer = require("nodemailer");
-const fs = require('fs');
-const path = require('path');
-const PDFDocument = require('pdfkit');
+const fs = require("fs");
+const path = require("path");
+const PDFDocument = require("pdfkit");
 const Invoice = require("../../models/Invoice");
 const SalesOrder = require("../../models/SalesOrder");
 const sendInvoiceEmail = async (invoiceId) => {
-    try {
-        if (!invoiceId) {
-            throw new Error("invoiceId are required");
-        }
+  try {
+    if (!invoiceId) {
+      throw new Error("invoiceId are required");
+    }
 
-        // Fetch the latest invoice for the given order ID
-        const invoice = await Invoice.findOne({ invoice_id: invoiceId }).sort({ createdAt: -1 });
+    // Fetch the latest invoice for the given order ID
+    const invoice = await Invoice.findOne({ invoice_id: invoiceId }).sort({
+      createdAt: -1,
+    });
 
-        if (!invoice) {
-            return {
-                success: false,
-                message: "No invoice found for the given order ID."
-            };
-        }
+    if (!invoice) {
+      return {
+        success: false,
+        message: "No invoice found for the given order ID.",
+      };
+    }
 
-        console.log("Fetched Invoice:", invoice);
-        if (!invoice.order_id) {
-            return {
-                success: false,
-                message: "Invoice does not contain a valid order_id."
-            };
-        }
+    console.log("Fetched Invoice:", invoice);
+    if (!invoice.order_id) {
+      return {
+        success: false,
+        message: "Invoice does not contain a valid order_id.",
+      };
+    }
 
-        // Fetch corresponding order details
-        const order = await SalesOrder.findOne({ orderId: invoice.order_id });
-        // return false;
-        // Extract order details
-        console.log("Fetched order:", order);
-        if (!order) {
-            return {
-                success: false,
-                message: "No order found for the given order ID."
-            };
-        }
+    // Fetch corresponding order details
+    const order = await SalesOrder.findOne({ orderId: invoice.order_id });
+    // return false;
+    // Extract order details
+    console.log("Fetched order:", order);
+    if (!order) {
+      return {
+        success: false,
+        message: "No order found for the given order ID.",
+      };
+    }
 
-        // Convert orderPrice to a number
-        const orderPrice = Number(order.orderPrice) || 0;
-        const quantity = Number(order.quantity) || 1;
+    // Convert orderPrice to a number
+    const orderPrice = Number(order.orderPrice) || 0;
+    const quantity = Number(order.quantity) || 1;
 
-        // Calculate totals
-        const subtotal = quantity * orderPrice;
-        const gst = subtotal * 0.18; // 18% GST
-        const total = subtotal + gst;
+    // Calculate totals
+    const subtotal = quantity * orderPrice;
+    const gst = subtotal * 0.18; // 18% GST
+    const total = subtotal + gst;
 
-        // Email content (HTML)
-        const emailContent = `
+    // Email content (HTML)
+    const emailContent = `
         <html>
         <head>
             <style>
@@ -80,7 +82,9 @@ const sendInvoiceEmail = async (invoiceId) => {
 
                 <p><strong>Invoice No:</strong> ${invoice.invoice_id}</p>
                 <p><strong>Order No:</strong> ${invoice.order_id}</p>
-                <p><strong>Date:</strong> ${new Date(invoice.createdAt).toLocaleDateString()}</p>
+                <p><strong>Date:</strong> ${new Date(
+                  invoice.createdAt
+                ).toLocaleDateString()}</p>
                 <p><strong>Status:</strong> ${invoice.status}</p>
 
                 <h3>Bill To:</h3>
@@ -113,46 +117,46 @@ const sendInvoiceEmail = async (invoiceId) => {
                     </tr>
                 </table>
 
-                <p class="footer">Thank you for your business! <br> For inquiries, contact us at support@yourcompany.com</p>
+                <p class="footer">Thank you for your business! <br> For inquiries, contact us at info@thailiwale.com</p>
             </div>
         </body>
         </html>
     `;
 
-        // Setup Nodemailer transporter
-        const transporter = nodemailer.createTransport({
-            host: "sandbox.smtp.mailtrap.io",
-            port: 2525,
-            auth: {
-                user: "47974993873f54",
-                pass: "1fdcda65438582"
-            }
-        });
+    // Setup Nodemailer transporter
+    const transporter = nodemailer.createTransport({
+      host: "sandbox.smtp.mailtrap.io",
+      port: 2525,
+      auth: {
+        user: "47974993873f54",
+        pass: "1fdcda65438582",
+      },
+    });
 
-        // Email options
-        const mailOptions = {
-            from: '"Techize Builder" <info@techizebuilder.com>',
-            to: order.email,
-            subject: 'Your Invoice',
-            html: emailContent
-        };
+    // Email options
+    const mailOptions = {
+      from: '"Techize Builder" <info@techizebuilder.com>',
+      to: order.email,
+      subject: "Your Invoice",
+      html: emailContent,
+    };
 
-        // Send email
-        await transporter.sendMail(mailOptions);
+    // Send email
+    await transporter.sendMail(mailOptions);
 
-        invoice.status = "Sending";
-        await invoice.save();
-        return { success: true, message: "Invoice sent successfully!" };
-    } catch (error) {
-        console.error("Error sending invoice:", error);
-        return { success: false, message: "Failed to send invoice", error };
-    }
+    invoice.status = "Sending";
+    await invoice.save();
+    return { success: true, message: "Invoice sent successfully!" };
+  } catch (error) {
+    console.error("Error sending invoice:", error);
+    return { success: false, message: "Failed to send invoice", error };
+  }
 };
 
 const sendSalesOverviewEmail = async (order) => {
-    try {
-        // Email content (HTML)
-        const emailContent = `
+  try {
+    // Email content (HTML)
+    const emailContent = `
 <html>
 <head>
     <style>
@@ -283,50 +287,48 @@ const sendSalesOverviewEmail = async (order) => {
             </table>
         </div>
 
-        <p class="footer">Thank you for your business! <br> For inquiries, contact us at support@yourcompany.com</p>
+        <p class="footer">Thank you for your business! <br> For inquiries, contact us at info@thailiwale.com</p>
     </div>
 </body>
 </html>
 `;
 
+    // Setup Nodemailer transporter
+    const transporter = nodemailer.createTransport({
+      host: "sandbox.smtp.mailtrap.io",
+      port: 2525,
+      auth: {
+        user: "47974993873f54",
+        pass: "1fdcda65438582",
+      },
+    });
 
-        // Setup Nodemailer transporter
-        const transporter = nodemailer.createTransport({
-            host: "sandbox.smtp.mailtrap.io",
-            port: 2525,
-            auth: {
-                user: "47974993873f54",
-                pass: "1fdcda65438582"
-            }
-        });
+    // Email options
+    const mailOptions = {
+      from: '"Techize Builder" <info@techizebuilder.com>',
+      to: order.email,
+      subject: "Your Sales Overview",
+      html: emailContent,
+    };
 
-        // Email options
-        const mailOptions = {
-            from: '"Techize Builder" <info@techizebuilder.com>',
-            to: order.email,
-            subject: 'Your Sales Overview',
-            html: emailContent
-        };
-
-        // Send email
-        await transporter.sendMail(mailOptions);
-        return { success: true, message: "Sales Overview sent successfully!" };
-    } catch (error) {
-        console.error("Error sending sales overview email:", error);
-        throw error;
-    }
-}
+    // Send email
+    await transporter.sendMail(mailOptions);
+    return { success: true, message: "Sales Overview sent successfully!" };
+  } catch (error) {
+    console.error("Error sending sales overview email:", error);
+    throw error;
+  }
+};
 const sendCompletedEmail = async (delivery, salesRecord) => {
+  console.log("delivery details is---", delivery);
+  try {
+    // 1️⃣ Validate Input Data
+    if (!delivery || !salesRecord) {
+      throw new Error("Missing delivery or sales record data.");
+    }
 
-    console.log('delivery details is---', delivery)
-    try {
-        // 1️⃣ Validate Input Data
-        if (!delivery || !salesRecord) {
-            throw new Error("Missing delivery or sales record data.");
-        }
-
-        // 2️⃣ Email Content
-        const emailContent = `
+    // 2️⃣ Email Content
+    const emailContent = `
         <html>
         <head>
             <style>
@@ -470,10 +472,21 @@ const sendCompletedEmail = async (delivery, salesRecord) => {
                     <tr>
                         <td>${delivery._id || "N/A"}</td>
                         <td>${delivery.status || "N/A"}</td>
-                        <td>${delivery.deliveryDate ? new Date(delivery.deliveryDate).toLocaleString("en-GB", {
-            day: "2-digit", month: "2-digit", year: "numeric",
-            hour: "2-digit", minute: "2-digit", second: "2-digit"
-        }) : "N/A"}</td>
+                        <td>${
+                          delivery.deliveryDate
+                            ? new Date(delivery.deliveryDate).toLocaleString(
+                                "en-GB",
+                                {
+                                  day: "2-digit",
+                                  month: "2-digit",
+                                  year: "numeric",
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                  second: "2-digit",
+                                }
+                              )
+                            : "N/A"
+                        }</td>
                         <td>${delivery.driverName || "N/A"}</td>
                         <td>${delivery.driverContact || "N/A"}</td>
                         <td>${delivery.vehicleNo || "N/A"}</td>
@@ -482,38 +495,42 @@ const sendCompletedEmail = async (delivery, salesRecord) => {
             </div>
 
 
-            <p class="footer">Thank you for your business! <br> For inquiries, contact us at support@yourcompany.com</p>
+            <p class="footer">Thank you for your business! <br> For inquiries, contact us at info@thailiwale.com</p>
         </div>
     </body>
         </html>
         `;
 
-        // 3️⃣ Setup Nodemailer Transporter
-        const transporter = nodemailer.createTransport({
-            host: "sandbox.smtp.mailtrap.io",
-            port: 2525,
-            auth: {
-                user: "47974993873f54",
-                pass: "1fdcda65438582"
-            }
-        });
+    // 3️⃣ Setup Nodemailer Transporter
+    const transporter = nodemailer.createTransport({
+      host: "sandbox.smtp.mailtrap.io",
+      port: 2525,
+      auth: {
+        user: "47974993873f54",
+        pass: "1fdcda65438582",
+      },
+    });
 
-        // 4️⃣ Send Email
-        const mailOptions = {
-            from: 'Techize Builder <info@techizebuilder.com>',
-            to: salesRecord.email,
-            subject: 'Your Order is Completed!',
-            html: emailContent
-        };
+    // 4️⃣ Send Email
+    const mailOptions = {
+      from: "Techize Builder <info@techizebuilder.com>",
+      to: salesRecord.email,
+      subject: "Your Order is Completed!",
+      html: emailContent,
+    };
 
-        await transporter.sendMail(mailOptions);
+    await transporter.sendMail(mailOptions);
 
-        console.log("✅ Invoice Email Sent Successfully");
-        return { success: true, message: "Email sent successfully!" };
-    } catch (error) {
-        console.error("⚠️ Failed to send invoice email:", error);
-        throw error;
-    }
+    console.log("✅ Invoice Email Sent Successfully");
+    return { success: true, message: "Email sent successfully!" };
+  } catch (error) {
+    console.error("⚠️ Failed to send invoice email:", error);
+    throw error;
+  }
 };
 
-module.exports = { sendInvoiceEmail, sendSalesOverviewEmail, sendCompletedEmail };
+module.exports = {
+  sendInvoiceEmail,
+  sendSalesOverviewEmail,
+  sendCompletedEmail,
+};
