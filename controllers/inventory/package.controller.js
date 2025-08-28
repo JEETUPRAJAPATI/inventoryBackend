@@ -162,7 +162,9 @@ class PackageController {
       if (totalWeightAfterAdd > allowedLimit) {
         return res.status(400).json({
           success: false,
-          message: `Total weight after adding (${totalWeightAfterAdd}) exceeds allowed limit (${allowedLimit}).`,
+          message: `Total weight after adding (${totalWeightAfterAdd.toFixed(
+            2
+          )}) exceeds allowed limit (${allowedLimit.toFixed(2)}).`,
         });
       }
 
